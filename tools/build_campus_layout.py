@@ -35,18 +35,18 @@ WORLD_WIDTH, WORLD_HEIGHT = 1536, 1024
 # --- walkable surfaces -------------------------------------------------------
 FLOORS: list[tuple[int, int, int, int]] = [
     # Server Vault
-    (58, 146, 405, 336),
+    (58, 240, 405, 336),
     # Security Watch
     (88, 378, 400, 622),
     # Archive Library, plus the east aisle running up beside the shelves
-    (76, 762, 470, 946),
-    (440, 642, 480, 882),
+    (96, 756, 444, 946),
+    (440, 756, 480, 882),
     # Data Garden
-    (1085, 160, 1500, 330),
+    (1085, 170, 1500, 330),
     # Briefing Room
-    (1095, 470, 1500, 636),
+    (1095, 465, 1500, 620),
     # Pantry Lounge
-    (1020, 762, 1500, 947),
+    (1020, 760, 1500, 947),
     # Central hall + arrival landing
     (440, 186, 1065, 636),
     (490, 636, 1012, 890),
@@ -68,54 +68,55 @@ FLOORS: list[tuple[int, int, int, int]] = [
 # walk around instead (desks, tables, sofas, planters) stays solid.
 OBSTACLES: list[dict] = [
     # Server Vault
-    dict(id="vault-racks", rect=(108, 150, 336, 240), through=True),
-    dict(id="vault-cabinet", rect=(338, 170, 376, 250), through=True),
+    dict(id="vault-racks", rect=(100, 140, 340, 240)),
+    dict(id="vault-cabinet", rect=(338, 140, 376, 240)),
     dict(id="vault-desk", rect=(138, 242, 310, 322)),
     # Security Watch
     dict(id="security-wall-screens", rect=(100, 372, 312, 464)),
     dict(id="security-desk", rect=(114, 462, 298, 560)),
-    dict(id="security-shelf", rect=(312, 394, 364, 472), through=True),
+    dict(id="security-shelf", rect=(312, 394, 364, 472)),
     dict(id="security-drawer", rect=(356, 458, 398, 494)),
     dict(id="security-planter", rect=(314, 576, 398, 620)),
     dict(id="security-cabinet-a", rect=(48, 404, 92, 494)),
     dict(id="security-cabinet-b", rect=(48, 500, 92, 562)),
     dict(id="security-cabinet-c", rect=(48, 566, 92, 626)),
     # Archive Library
-    dict(id="archive-wall-shelves", rect=(72, 668, 444, 760), through=True),
-    dict(id="archive-dresser-a", rect=(40, 694, 80, 770), through=True),
-    dict(id="archive-dresser-b", rect=(202, 716, 244, 766)),
-    dict(id="archive-plant-ne", rect=(440, 698, 486, 756), through=True),
-    dict(id="archive-shelf-left", rect=(97, 778, 147, 920), through=True),
-    dict(id="archive-shelf-right", rect=(391, 778, 437, 920), through=True),
-    dict(id="archive-cabinet-w", rect=(40, 828, 80, 948), through=True),
-    dict(id="archive-plant-sw", rect=(40, 770, 80, 800)),
-    dict(id="archive-plant-se", rect=(444, 882, 486, 946)), # Solid planter blocking corner
-    dict(id="archive-south-wall", rect=(40, 946, 500, 970)), # Solid south wall
+    dict(id="archive-wall-shelves", rect=(50, 650, 440, 744)),
+    dict(id="archive-dresser-a", rect=(40, 670, 96, 756)),
+    dict(id="archive-dresser-b", rect=(202, 716, 244, 756)),
+    dict(id="archive-plant-ne", rect=(436, 680, 486, 756)),
+    dict(id="archive-shelf-left", rect=(97, 774, 147, 926)),
+    dict(id="archive-shelf-right", rect=(391, 774, 437, 926)),
+    dict(id="archive-cabinet-w", rect=(40, 828, 96, 948)),
+    dict(id="archive-plant-sw", rect=(40, 770, 96, 828)),
+    dict(id="archive-plant-se", rect=(444, 882, 486, 946)),
+    dict(id="archive-south-wall", rect=(40, 946, 500, 970)),
     dict(id="archive-chair-left", rect=(189, 818, 233, 881)),
     dict(id="archive-chair-right", rect=(302, 818, 343, 881)),
     dict(id="archive-table", rect=(225, 813, 310, 897)),
     # Data Garden
-    dict(id="garden-window-boxes", rect=(1153, 42, 1394, 164), through=True),
-    dict(id="garden-cabinet", rect=(1086, 64, 1126, 162), through=True),
-    dict(id="garden-console", rect=(1126, 102, 1156, 164), through=True),
-    dict(id="garden-beds", rect=(1129, 166, 1382, 314)),
-    dict(id="garden-lamp-desk", rect=(1392, 114, 1444, 190), through=True),
-    dict(id="garden-side-desk", rect=(1446, 102, 1500, 190), through=True),
+    dict(id="garden-window-boxes", rect=(1150, 120, 1400, 170)),
+    dict(id="garden-cabinet", rect=(1086, 120, 1130, 170)),
+    dict(id="garden-console", rect=(1130, 120, 1160, 170)),
+    dict(id="garden-beds", rect=(1129, 170, 1382, 314)),
+    dict(id="garden-lamp-desk", rect=(1390, 120, 1446, 190)),
+    dict(id="garden-side-desk", rect=(1446, 120, 1500, 190)),
     dict(id="garden-workstation", rect=(1377, 198, 1500, 332)),
     # Briefing Room
-    dict(id="briefing-cabinets", rect=(1096, 378, 1462, 472), through=True),
-    dict(id="briefing-plant", rect=(1451, 398, 1492, 472)),
-    dict(id="briefing-table", rect=(1174, 472, 1402, 610)),
+    dict(id="briefing-cabinets", rect=(1096, 370, 1466, 465)),
+    dict(id="briefing-plant", rect=(1450, 370, 1500, 465)),
+    dict(id="briefing-table", rect=(1140, 470, 1460, 615)),
+    dict(id="briefing-south-wall", rect=(1080, 620, 1520, 650)),
     # Pantry Lounge
-    dict(id="pantry-counter", rect=(1014, 674, 1318, 764), through=True),
-    dict(id="pantry-side-table", rect=(1379, 694, 1449, 764), through=True),
-    dict(id="pantry-plants-ne", rect=(1414, 694, 1484, 760), through=True),
+    dict(id="pantry-counter", rect=(1014, 674, 1330, 760)),
+    dict(id="pantry-side-table", rect=(1370, 694, 1449, 760)),
+    dict(id="pantry-plants-ne", rect=(1449, 680, 1495, 760)),
     dict(id="pantry-sofa", rect=(1114, 800, 1246, 864)),
     dict(id="pantry-chair-left", rect=(1072, 846, 1122, 913)),
     dict(id="pantry-chair-right", rect=(1245, 846, 1291, 913)),
     dict(id="pantry-coffee-table", rect=(1134, 874, 1228, 920)),
     dict(id="pantry-lamp", rect=(1238, 812, 1266, 851)),
-    dict(id="pantry-dining", rect=(1350, 764, 1462, 862)),
+    dict(id="pantry-dining", rect=(1350, 750, 1462, 862)),
     dict(id="pantry-planter-s", rect=(1341, 905, 1453, 947)),
     dict(id="pantry-plant-sw", rect=(1014, 905, 1056, 947)),
     dict(id="pantry-plant-se", rect=(1448, 891, 1491, 947)),
@@ -129,8 +130,8 @@ OBSTACLES: list[dict] = [
     dict(id="ne-plant", rect=(812, 263, 856, 349)),
     dict(id="ne-planter", rect=(896, 368, 1018, 426)),
     dict(id="ne-cabinet", rect=(952, 248, 1000, 355)),
-    # Central hall - command table
-    dict(id="command-table", rect=(648, 430, 858, 614), shape="ellipse"),
+    # Central hall - command table (covers table + all surrounding chairs)
+    dict(id="command-table", rect=(626, 408, 878, 626), shape="ellipse"),
     # Central hall - south pods
     dict(id="sw-pod-wall", rect=(482, 574, 500, 786)),
     dict(id="sw-pod-bottom-wall", rect=(484, 746, 594, 788)),

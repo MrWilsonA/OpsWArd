@@ -10,21 +10,21 @@
   "occluders": [
     {
       "id": "vault-racks",
-      "x": 108,
-      "y": 150,
-      "width": 228,
-      "height": 90,
+      "x": 100,
+      "y": 140,
+      "width": 240,
+      "height": 100,
       "baseline": 240,
-      "through": true
+      "through": false
     },
     {
       "id": "vault-cabinet",
       "x": 338,
-      "y": 170,
+      "y": 140,
       "width": 38,
-      "height": 80,
-      "baseline": 250,
-      "through": true
+      "height": 100,
+      "baseline": 240,
+      "through": false
     },
     {
       "id": "vault-desk",
@@ -60,7 +60,7 @@
       "width": 52,
       "height": 78,
       "baseline": 472,
-      "through": true
+      "through": false
     },
     {
       "id": "security-drawer",
@@ -109,74 +109,74 @@
     },
     {
       "id": "archive-wall-shelves",
-      "x": 72,
-      "y": 668,
-      "width": 372,
-      "height": 92,
-      "baseline": 760,
-      "through": true
+      "x": 50,
+      "y": 650,
+      "width": 390,
+      "height": 94,
+      "baseline": 744,
+      "through": false
     },
     {
       "id": "archive-dresser-a",
       "x": 40,
-      "y": 694,
-      "width": 40,
-      "height": 76,
-      "baseline": 770,
-      "through": true
+      "y": 670,
+      "width": 56,
+      "height": 86,
+      "baseline": 756,
+      "through": false
     },
     {
       "id": "archive-dresser-b",
       "x": 202,
       "y": 716,
       "width": 42,
-      "height": 50,
-      "baseline": 766,
+      "height": 40,
+      "baseline": 756,
       "through": false
     },
     {
       "id": "archive-plant-ne",
-      "x": 440,
-      "y": 698,
-      "width": 46,
-      "height": 58,
+      "x": 436,
+      "y": 680,
+      "width": 50,
+      "height": 76,
       "baseline": 756,
-      "through": true
+      "through": false
     },
     {
       "id": "archive-shelf-left",
       "x": 97,
-      "y": 778,
+      "y": 774,
       "width": 50,
-      "height": 142,
-      "baseline": 920,
-      "through": true
+      "height": 152,
+      "baseline": 926,
+      "through": false
     },
     {
       "id": "archive-shelf-right",
       "x": 391,
-      "y": 778,
+      "y": 774,
       "width": 46,
-      "height": 142,
-      "baseline": 920,
-      "through": true
+      "height": 152,
+      "baseline": 926,
+      "through": false
     },
     {
       "id": "archive-cabinet-w",
       "x": 40,
       "y": 828,
-      "width": 40,
+      "width": 56,
       "height": 120,
       "baseline": 948,
-      "through": true
+      "through": false
     },
     {
       "id": "archive-plant-sw",
       "x": 40,
       "y": 770,
-      "width": 40,
-      "height": 30,
-      "baseline": 800,
+      "width": 56,
+      "height": 58,
+      "baseline": 828,
       "through": false
     },
     {
@@ -226,57 +226,57 @@
     },
     {
       "id": "garden-window-boxes",
-      "x": 1153,
-      "y": 42,
-      "width": 241,
-      "height": 122,
-      "baseline": 164,
-      "through": true
+      "x": 1150,
+      "y": 120,
+      "width": 250,
+      "height": 50,
+      "baseline": 170,
+      "through": false
     },
     {
       "id": "garden-cabinet",
       "x": 1086,
-      "y": 64,
-      "width": 40,
-      "height": 98,
-      "baseline": 162,
-      "through": true
+      "y": 120,
+      "width": 44,
+      "height": 50,
+      "baseline": 170,
+      "through": false
     },
     {
       "id": "garden-console",
-      "x": 1126,
-      "y": 102,
+      "x": 1130,
+      "y": 120,
       "width": 30,
-      "height": 62,
-      "baseline": 164,
-      "through": true
+      "height": 50,
+      "baseline": 170,
+      "through": false
     },
     {
       "id": "garden-beds",
       "x": 1129,
-      "y": 166,
+      "y": 170,
       "width": 253,
-      "height": 148,
+      "height": 144,
       "baseline": 314,
       "through": false
     },
     {
       "id": "garden-lamp-desk",
-      "x": 1392,
-      "y": 114,
-      "width": 52,
-      "height": 76,
+      "x": 1390,
+      "y": 120,
+      "width": 56,
+      "height": 70,
       "baseline": 190,
-      "through": true
+      "through": false
     },
     {
       "id": "garden-side-desk",
       "x": 1446,
-      "y": 102,
+      "y": 120,
       "width": 54,
-      "height": 88,
+      "height": 70,
       "baseline": 190,
-      "through": true
+      "through": false
     },
     {
       "id": "garden-workstation",
@@ -290,56 +290,65 @@
     {
       "id": "briefing-cabinets",
       "x": 1096,
-      "y": 378,
-      "width": 366,
-      "height": 94,
-      "baseline": 472,
-      "through": true
+      "y": 370,
+      "width": 370,
+      "height": 95,
+      "baseline": 465,
+      "through": false
     },
     {
       "id": "briefing-plant",
-      "x": 1451,
-      "y": 398,
-      "width": 41,
-      "height": 74,
-      "baseline": 472,
+      "x": 1450,
+      "y": 370,
+      "width": 50,
+      "height": 95,
+      "baseline": 465,
       "through": false
     },
     {
       "id": "briefing-table",
-      "x": 1174,
-      "y": 472,
-      "width": 228,
-      "height": 138,
-      "baseline": 610,
+      "x": 1140,
+      "y": 470,
+      "width": 320,
+      "height": 145,
+      "baseline": 615,
+      "through": false
+    },
+    {
+      "id": "briefing-south-wall",
+      "x": 1080,
+      "y": 620,
+      "width": 440,
+      "height": 30,
+      "baseline": 650,
       "through": false
     },
     {
       "id": "pantry-counter",
       "x": 1014,
       "y": 674,
-      "width": 304,
-      "height": 90,
-      "baseline": 764,
-      "through": true
+      "width": 316,
+      "height": 86,
+      "baseline": 760,
+      "through": false
     },
     {
       "id": "pantry-side-table",
-      "x": 1379,
+      "x": 1370,
       "y": 694,
-      "width": 70,
-      "height": 70,
-      "baseline": 764,
-      "through": true
+      "width": 79,
+      "height": 66,
+      "baseline": 760,
+      "through": false
     },
     {
       "id": "pantry-plants-ne",
-      "x": 1414,
-      "y": 694,
-      "width": 70,
-      "height": 66,
+      "x": 1449,
+      "y": 680,
+      "width": 46,
+      "height": 80,
       "baseline": 760,
-      "through": true
+      "through": false
     },
     {
       "id": "pantry-sofa",
@@ -389,9 +398,9 @@
     {
       "id": "pantry-dining",
       "x": 1350,
-      "y": 764,
+      "y": 750,
       "width": 112,
-      "height": 98,
+      "height": 112,
       "baseline": 862,
       "through": false
     },
@@ -505,11 +514,11 @@
     },
     {
       "id": "command-table",
-      "x": 648,
-      "y": 430,
-      "width": 210,
-      "height": 184,
-      "baseline": 614,
+      "x": 626,
+      "y": 408,
+      "width": 252,
+      "height": 218,
+      "baseline": 626,
       "through": false
     },
     {
