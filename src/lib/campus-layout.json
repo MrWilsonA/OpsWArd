@@ -136,29 +136,29 @@
     },
     {
       "id": "archive-plant-ne",
-      "x": 441,
+      "x": 440,
       "y": 698,
-      "width": 35,
-      "height": 54,
-      "baseline": 752,
+      "width": 46,
+      "height": 58,
+      "baseline": 756,
       "through": true
     },
     {
       "id": "archive-shelf-left",
       "x": 97,
-      "y": 766,
+      "y": 778,
       "width": 50,
-      "height": 164,
-      "baseline": 930,
+      "height": 142,
+      "baseline": 920,
       "through": true
     },
     {
       "id": "archive-shelf-right",
       "x": 391,
-      "y": 766,
+      "y": 778,
       "width": 46,
-      "height": 164,
-      "baseline": 930,
+      "height": 142,
+      "baseline": 920,
       "through": true
     },
     {
@@ -181,12 +181,21 @@
     },
     {
       "id": "archive-plant-se",
-      "x": 464,
-      "y": 890,
-      "width": 36,
-      "height": 54,
-      "baseline": 944,
-      "through": true
+      "x": 444,
+      "y": 882,
+      "width": 42,
+      "height": 64,
+      "baseline": 946,
+      "through": false
+    },
+    {
+      "id": "archive-south-wall",
+      "x": 40,
+      "y": 946,
+      "width": 460,
+      "height": 24,
+      "baseline": 970,
+      "through": false
     },
     {
       "id": "archive-chair-left",
@@ -418,33 +427,33 @@
       "x": 482,
       "y": 244,
       "width": 16,
-      "height": 168,
-      "baseline": 412,
+      "height": 182,
+      "baseline": 426,
       "through": false
     },
     {
       "id": "ne-pod-wall",
       "x": 1000,
       "y": 244,
-      "width": 16,
-      "height": 168,
-      "baseline": 412,
+      "width": 18,
+      "height": 182,
+      "baseline": 426,
       "through": false
     },
     {
       "id": "nw-desk",
-      "x": 531,
+      "x": 530,
       "y": 250,
-      "width": 154,
-      "height": 104,
-      "baseline": 354,
+      "width": 156,
+      "height": 105,
+      "baseline": 355,
       "through": false
     },
     {
       "id": "nw-plant",
       "x": 495,
       "y": 263,
-      "width": 44,
+      "width": 45,
       "height": 86,
       "baseline": 349,
       "through": false
@@ -452,37 +461,46 @@
     {
       "id": "nw-planter",
       "x": 484,
-      "y": 366,
+      "y": 368,
       "width": 118,
-      "height": 46,
-      "baseline": 412,
+      "height": 58,
+      "baseline": 426,
       "through": false
     },
     {
       "id": "ne-desk",
-      "x": 828,
+      "x": 814,
       "y": 250,
-      "width": 170,
-      "height": 104,
-      "baseline": 354,
+      "width": 156,
+      "height": 105,
+      "baseline": 355,
       "through": false
     },
     {
       "id": "ne-plant",
-      "x": 815,
+      "x": 812,
       "y": 263,
-      "width": 42,
+      "width": 44,
       "height": 86,
       "baseline": 349,
       "through": false
     },
     {
       "id": "ne-planter",
-      "x": 906,
-      "y": 366,
-      "width": 112,
-      "height": 46,
-      "baseline": 412,
+      "x": 896,
+      "y": 368,
+      "width": 122,
+      "height": 58,
+      "baseline": 426,
+      "through": false
+    },
+    {
+      "id": "ne-cabinet",
+      "x": 952,
+      "y": 248,
+      "width": 48,
+      "height": 107,
+      "baseline": 355,
       "through": false
     },
     {
@@ -496,36 +514,36 @@
     },
     {
       "id": "sw-pod-wall",
-      "x": 484,
-      "y": 614,
-      "width": 16,
-      "height": 150,
-      "baseline": 764,
+      "x": 482,
+      "y": 574,
+      "width": 18,
+      "height": 212,
+      "baseline": 786,
       "through": false
     },
     {
-      "id": "se-pod-wall",
-      "x": 998,
-      "y": 614,
-      "width": 16,
-      "height": 150,
-      "baseline": 764,
+      "id": "sw-pod-bottom-wall",
+      "x": 484,
+      "y": 746,
+      "width": 110,
+      "height": 42,
+      "baseline": 788,
+      "through": false
+    },
+    {
+      "id": "sw-pod-bottom-post",
+      "x": 558,
+      "y": 746,
+      "width": 36,
+      "height": 58,
+      "baseline": 804,
       "through": false
     },
     {
       "id": "sw-plant",
-      "x": 503,
+      "x": 495,
       "y": 644,
-      "width": 37,
-      "height": 86,
-      "baseline": 730,
-      "through": false
-    },
-    {
-      "id": "se-plant",
-      "x": 818,
-      "y": 644,
-      "width": 37,
+      "width": 45,
       "height": 86,
       "baseline": 730,
       "through": false
@@ -533,37 +551,82 @@
     {
       "id": "sw-planter",
       "x": 484,
-      "y": 590,
+      "y": 574,
       "width": 118,
-      "height": 46,
+      "height": 62,
       "baseline": 636,
       "through": false
     },
     {
       "id": "sw-desk",
-      "x": 531,
+      "x": 530,
       "y": 648,
-      "width": 154,
-      "height": 99,
-      "baseline": 747,
+      "width": 156,
+      "height": 102,
+      "baseline": 750,
+      "through": false
+    },
+    {
+      "id": "se-pod-wall",
+      "x": 998,
+      "y": 574,
+      "width": 18,
+      "height": 212,
+      "baseline": 786,
+      "through": false
+    },
+    {
+      "id": "se-pod-bottom-wall",
+      "x": 906,
+      "y": 746,
+      "width": 110,
+      "height": 42,
+      "baseline": 788,
+      "through": false
+    },
+    {
+      "id": "se-pod-bottom-post",
+      "x": 906,
+      "y": 746,
+      "width": 36,
+      "height": 58,
+      "baseline": 804,
+      "through": false
+    },
+    {
+      "id": "se-plant",
+      "x": 812,
+      "y": 644,
+      "width": 44,
+      "height": 86,
+      "baseline": 730,
       "through": false
     },
     {
       "id": "se-planter",
       "x": 896,
-      "y": 586,
-      "width": 117,
-      "height": 50,
+      "y": 574,
+      "width": 120,
+      "height": 62,
       "baseline": 636,
       "through": false
     },
     {
       "id": "se-desk",
-      "x": 839,
+      "x": 814,
       "y": 648,
-      "width": 159,
-      "height": 99,
-      "baseline": 747,
+      "width": 156,
+      "height": 102,
+      "baseline": 750,
+      "through": false
+    },
+    {
+      "id": "se-cabinet",
+      "x": 952,
+      "y": 648,
+      "width": 48,
+      "height": 107,
+      "baseline": 755,
       "through": false
     },
     {
