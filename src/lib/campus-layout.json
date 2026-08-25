@@ -1,0 +1,588 @@
+{
+  "world": {
+    "width": 1536,
+    "height": 1024
+  },
+  "spawn": {
+    "x": 752,
+    "y": 856
+  },
+  "occluders": [
+    {
+      "id": "vault-racks",
+      "x": 108,
+      "y": 150,
+      "width": 228,
+      "height": 90,
+      "baseline": 240,
+      "through": true
+    },
+    {
+      "id": "vault-cabinet",
+      "x": 338,
+      "y": 170,
+      "width": 38,
+      "height": 80,
+      "baseline": 250,
+      "through": true
+    },
+    {
+      "id": "vault-desk",
+      "x": 138,
+      "y": 242,
+      "width": 172,
+      "height": 80,
+      "baseline": 322,
+      "through": false
+    },
+    {
+      "id": "security-wall-screens",
+      "x": 100,
+      "y": 372,
+      "width": 212,
+      "height": 92,
+      "baseline": 464,
+      "through": false
+    },
+    {
+      "id": "security-desk",
+      "x": 114,
+      "y": 462,
+      "width": 184,
+      "height": 98,
+      "baseline": 560,
+      "through": false
+    },
+    {
+      "id": "security-shelf",
+      "x": 312,
+      "y": 394,
+      "width": 52,
+      "height": 78,
+      "baseline": 472,
+      "through": true
+    },
+    {
+      "id": "security-drawer",
+      "x": 356,
+      "y": 458,
+      "width": 42,
+      "height": 36,
+      "baseline": 494,
+      "through": false
+    },
+    {
+      "id": "security-planter",
+      "x": 314,
+      "y": 576,
+      "width": 84,
+      "height": 44,
+      "baseline": 620,
+      "through": false
+    },
+    {
+      "id": "security-cabinet-a",
+      "x": 48,
+      "y": 404,
+      "width": 44,
+      "height": 90,
+      "baseline": 494,
+      "through": false
+    },
+    {
+      "id": "security-cabinet-b",
+      "x": 48,
+      "y": 500,
+      "width": 44,
+      "height": 62,
+      "baseline": 562,
+      "through": false
+    },
+    {
+      "id": "security-cabinet-c",
+      "x": 48,
+      "y": 566,
+      "width": 44,
+      "height": 60,
+      "baseline": 626,
+      "through": false
+    },
+    {
+      "id": "archive-wall-shelves",
+      "x": 72,
+      "y": 668,
+      "width": 372,
+      "height": 92,
+      "baseline": 760,
+      "through": true
+    },
+    {
+      "id": "archive-dresser-a",
+      "x": 40,
+      "y": 694,
+      "width": 40,
+      "height": 76,
+      "baseline": 770,
+      "through": true
+    },
+    {
+      "id": "archive-dresser-b",
+      "x": 202,
+      "y": 716,
+      "width": 42,
+      "height": 50,
+      "baseline": 766,
+      "through": false
+    },
+    {
+      "id": "archive-plant-ne",
+      "x": 441,
+      "y": 698,
+      "width": 35,
+      "height": 54,
+      "baseline": 752,
+      "through": true
+    },
+    {
+      "id": "archive-shelf-left",
+      "x": 97,
+      "y": 766,
+      "width": 50,
+      "height": 164,
+      "baseline": 930,
+      "through": true
+    },
+    {
+      "id": "archive-shelf-right",
+      "x": 391,
+      "y": 766,
+      "width": 46,
+      "height": 164,
+      "baseline": 930,
+      "through": true
+    },
+    {
+      "id": "archive-cabinet-w",
+      "x": 40,
+      "y": 828,
+      "width": 40,
+      "height": 120,
+      "baseline": 948,
+      "through": true
+    },
+    {
+      "id": "archive-plant-sw",
+      "x": 40,
+      "y": 770,
+      "width": 40,
+      "height": 30,
+      "baseline": 800,
+      "through": false
+    },
+    {
+      "id": "archive-plant-se",
+      "x": 464,
+      "y": 890,
+      "width": 36,
+      "height": 54,
+      "baseline": 944,
+      "through": true
+    },
+    {
+      "id": "archive-chair-left",
+      "x": 189,
+      "y": 818,
+      "width": 44,
+      "height": 63,
+      "baseline": 881,
+      "through": false
+    },
+    {
+      "id": "archive-chair-right",
+      "x": 302,
+      "y": 818,
+      "width": 41,
+      "height": 63,
+      "baseline": 881,
+      "through": false
+    },
+    {
+      "id": "archive-table",
+      "x": 225,
+      "y": 813,
+      "width": 85,
+      "height": 84,
+      "baseline": 897,
+      "through": false
+    },
+    {
+      "id": "garden-window-boxes",
+      "x": 1153,
+      "y": 42,
+      "width": 241,
+      "height": 122,
+      "baseline": 164,
+      "through": true
+    },
+    {
+      "id": "garden-cabinet",
+      "x": 1086,
+      "y": 64,
+      "width": 40,
+      "height": 98,
+      "baseline": 162,
+      "through": true
+    },
+    {
+      "id": "garden-console",
+      "x": 1126,
+      "y": 102,
+      "width": 30,
+      "height": 62,
+      "baseline": 164,
+      "through": true
+    },
+    {
+      "id": "garden-beds",
+      "x": 1129,
+      "y": 166,
+      "width": 253,
+      "height": 148,
+      "baseline": 314,
+      "through": false
+    },
+    {
+      "id": "garden-lamp-desk",
+      "x": 1392,
+      "y": 114,
+      "width": 52,
+      "height": 76,
+      "baseline": 190,
+      "through": true
+    },
+    {
+      "id": "garden-side-desk",
+      "x": 1446,
+      "y": 102,
+      "width": 54,
+      "height": 88,
+      "baseline": 190,
+      "through": true
+    },
+    {
+      "id": "garden-workstation",
+      "x": 1377,
+      "y": 198,
+      "width": 123,
+      "height": 134,
+      "baseline": 332,
+      "through": false
+    },
+    {
+      "id": "briefing-cabinets",
+      "x": 1096,
+      "y": 378,
+      "width": 366,
+      "height": 94,
+      "baseline": 472,
+      "through": true
+    },
+    {
+      "id": "briefing-plant",
+      "x": 1451,
+      "y": 398,
+      "width": 41,
+      "height": 74,
+      "baseline": 472,
+      "through": false
+    },
+    {
+      "id": "briefing-table",
+      "x": 1174,
+      "y": 472,
+      "width": 228,
+      "height": 138,
+      "baseline": 610,
+      "through": false
+    },
+    {
+      "id": "pantry-counter",
+      "x": 1014,
+      "y": 674,
+      "width": 304,
+      "height": 90,
+      "baseline": 764,
+      "through": true
+    },
+    {
+      "id": "pantry-side-table",
+      "x": 1379,
+      "y": 694,
+      "width": 70,
+      "height": 70,
+      "baseline": 764,
+      "through": true
+    },
+    {
+      "id": "pantry-plants-ne",
+      "x": 1414,
+      "y": 694,
+      "width": 70,
+      "height": 66,
+      "baseline": 760,
+      "through": true
+    },
+    {
+      "id": "pantry-sofa",
+      "x": 1114,
+      "y": 800,
+      "width": 132,
+      "height": 64,
+      "baseline": 864,
+      "through": false
+    },
+    {
+      "id": "pantry-chair-left",
+      "x": 1072,
+      "y": 846,
+      "width": 50,
+      "height": 67,
+      "baseline": 913,
+      "through": false
+    },
+    {
+      "id": "pantry-chair-right",
+      "x": 1245,
+      "y": 846,
+      "width": 46,
+      "height": 67,
+      "baseline": 913,
+      "through": false
+    },
+    {
+      "id": "pantry-coffee-table",
+      "x": 1134,
+      "y": 874,
+      "width": 94,
+      "height": 46,
+      "baseline": 920,
+      "through": false
+    },
+    {
+      "id": "pantry-lamp",
+      "x": 1238,
+      "y": 812,
+      "width": 28,
+      "height": 39,
+      "baseline": 851,
+      "through": false
+    },
+    {
+      "id": "pantry-dining",
+      "x": 1350,
+      "y": 764,
+      "width": 112,
+      "height": 98,
+      "baseline": 862,
+      "through": false
+    },
+    {
+      "id": "pantry-planter-s",
+      "x": 1341,
+      "y": 905,
+      "width": 112,
+      "height": 42,
+      "baseline": 947,
+      "through": false
+    },
+    {
+      "id": "pantry-plant-sw",
+      "x": 1014,
+      "y": 905,
+      "width": 42,
+      "height": 42,
+      "baseline": 947,
+      "through": false
+    },
+    {
+      "id": "pantry-plant-se",
+      "x": 1448,
+      "y": 891,
+      "width": 43,
+      "height": 56,
+      "baseline": 947,
+      "through": false
+    },
+    {
+      "id": "nw-pod-wall",
+      "x": 482,
+      "y": 244,
+      "width": 16,
+      "height": 168,
+      "baseline": 412,
+      "through": false
+    },
+    {
+      "id": "ne-pod-wall",
+      "x": 1000,
+      "y": 244,
+      "width": 16,
+      "height": 168,
+      "baseline": 412,
+      "through": false
+    },
+    {
+      "id": "nw-desk",
+      "x": 531,
+      "y": 250,
+      "width": 154,
+      "height": 104,
+      "baseline": 354,
+      "through": false
+    },
+    {
+      "id": "nw-plant",
+      "x": 495,
+      "y": 263,
+      "width": 44,
+      "height": 86,
+      "baseline": 349,
+      "through": false
+    },
+    {
+      "id": "nw-planter",
+      "x": 484,
+      "y": 366,
+      "width": 118,
+      "height": 46,
+      "baseline": 412,
+      "through": false
+    },
+    {
+      "id": "ne-desk",
+      "x": 828,
+      "y": 250,
+      "width": 170,
+      "height": 104,
+      "baseline": 354,
+      "through": false
+    },
+    {
+      "id": "ne-plant",
+      "x": 815,
+      "y": 263,
+      "width": 42,
+      "height": 86,
+      "baseline": 349,
+      "through": false
+    },
+    {
+      "id": "ne-planter",
+      "x": 906,
+      "y": 366,
+      "width": 112,
+      "height": 46,
+      "baseline": 412,
+      "through": false
+    },
+    {
+      "id": "command-table",
+      "x": 648,
+      "y": 430,
+      "width": 210,
+      "height": 184,
+      "baseline": 614,
+      "through": false
+    },
+    {
+      "id": "sw-pod-wall",
+      "x": 484,
+      "y": 614,
+      "width": 16,
+      "height": 150,
+      "baseline": 764,
+      "through": false
+    },
+    {
+      "id": "se-pod-wall",
+      "x": 998,
+      "y": 614,
+      "width": 16,
+      "height": 150,
+      "baseline": 764,
+      "through": false
+    },
+    {
+      "id": "sw-plant",
+      "x": 503,
+      "y": 644,
+      "width": 37,
+      "height": 86,
+      "baseline": 730,
+      "through": false
+    },
+    {
+      "id": "se-plant",
+      "x": 818,
+      "y": 644,
+      "width": 37,
+      "height": 86,
+      "baseline": 730,
+      "through": false
+    },
+    {
+      "id": "sw-planter",
+      "x": 484,
+      "y": 590,
+      "width": 118,
+      "height": 46,
+      "baseline": 636,
+      "through": false
+    },
+    {
+      "id": "sw-desk",
+      "x": 531,
+      "y": 648,
+      "width": 154,
+      "height": 99,
+      "baseline": 747,
+      "through": false
+    },
+    {
+      "id": "se-planter",
+      "x": 896,
+      "y": 586,
+      "width": 117,
+      "height": 50,
+      "baseline": 636,
+      "through": false
+    },
+    {
+      "id": "se-desk",
+      "x": 839,
+      "y": 648,
+      "width": 159,
+      "height": 99,
+      "baseline": 747,
+      "through": false
+    },
+    {
+      "id": "south-planter-w",
+      "x": 547,
+      "y": 763,
+      "width": 45,
+      "height": 45,
+      "baseline": 808,
+      "through": false
+    },
+    {
+      "id": "south-planter-e",
+      "x": 880,
+      "y": 763,
+      "width": 45,
+      "height": 45,
+      "baseline": 808,
+      "through": false
+    }
+  ]
+}
