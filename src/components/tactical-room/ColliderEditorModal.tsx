@@ -2,17 +2,14 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Activity,
   Check,
-  ChevronRight,
+  ChevronDown,
   Copy,
-  Crosshair,
   Download,
   Eye,
   EyeOff,
   Grid,
   Hand,
-  HelpCircle,
   Info,
   Layers,
   Maximize2,
@@ -22,6 +19,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Plus,
+  Redo2,
   RotateCcw,
   Save,
   Search,
@@ -30,7 +28,6 @@ import {
   Square,
   Trash2,
   Undo2,
-  Upload,
   X,
   Zap,
   ZoomIn,
@@ -86,12 +83,18 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
 
   const [floors, setFloors] = useState<FloorRect[]>([]);
   const [obstacles, setObstacles] = useState<ObstacleRect[]>([]);
-  const [history, setHistory] = useState<{ floors: FloorRect[]; obstacles: ObstacleRect[] }[]>([]);
+  
+  // Undo & Redo History Stacks
+  const [undoStack, setUndoStack] = useState<{ floors: FloorRect[]; obstacles: ObstacleRect[] }[]>([]);
+  const [redoStack, setRedoStack] = useState<{ floors: FloorRect[]; obstacles: ObstacleRect[] }[]>([]);
 
-  // Selection & Mode
+  // Selection & Active Tool
   const [selectedType, setSelectedType] = useState<'floor' | 'obstacle' | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [activeTool, setActiveTool] = useState<'select' | 'pan' | 'add-floor' | 'add-solid' | 'add-through'>('select');
+
+  // Spacebar Pan State
+  const [isSpaceHeld, setIsSpaceHeld] = useState(false);
 
   // Viewport / Zoom & Pan
   const [zoom, setZoom] = useState(0.85);
@@ -114,8 +117,8 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   const [showFloors, setShowFloors] = useState(true);
   const [showObstacles, setShowObstacles] = useState(true);
   const [showGridLines, setShowGridLines] = useState(false);
-  const [bgDimmer, setBgDimmer] = useState(0.88);
-  const [overlayOpacity, setOverlayOpacity] = useState(0.45);
+  const [bgDimmer, setBgDimmer] = useState(0.9);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.42);
   const [snapGrid, setSnapGrid] = useState<number>(2);
 
   // Sidebar Tabs & Search
@@ -123,7 +126,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   const [sidebarTab, setSidebarTab] = useState<'inspector' | 'list' | 'settings'>('inspector');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Status & Notification Toast
+  // Status Toast
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -135,6 +138,8 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
         const data = await res.json();
         setFloors(data.floors || []);
         setObstacles(data.obstacles || []);
+        setUndoStack([]);
+        setRedoStack([]);
       }
     } catch (err) {
       console.error('Failed to fetch colliders:', err);
@@ -150,25 +155,52 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     }
   }, [isOpen, loadColliders]);
 
+  // Record History for Undo (Clears Redo stack on new change)
   const recordHistory = useCallback(() => {
-    setHistory((prev) => [...prev.slice(-20), { floors: JSON.parse(JSON.stringify(floors)), obstacles: JSON.parse(JSON.stringify(obstacles)) }]);
+    setUndoStack((prev) => [
+      ...prev.slice(-25),
+      { floors: JSON.parse(JSON.stringify(floors)), obstacles: JSON.parse(JSON.stringify(obstacles)) },
+    ]);
+    setRedoStack([]);
   }, [floors, obstacles]);
 
-  const undo = () => {
-    if (history.length === 0) return;
-    const last = history[history.length - 1];
-    setFloors(last.floors);
-    setObstacles(last.obstacles);
-    setHistory((prev) => prev.slice(0, -1));
+  // Undo Function (Ctrl+Z)
+  const handleUndo = useCallback(() => {
+    if (undoStack.length === 0) return;
+    const previous = undoStack[undoStack.length - 1];
+    setRedoStack((prev) => [
+      ...prev,
+      { floors: JSON.parse(JSON.stringify(floors)), obstacles: JSON.parse(JSON.stringify(obstacles)) },
+    ]);
+    setFloors(previous.floors);
+    setObstacles(previous.obstacles);
+    setUndoStack((prev) => prev.slice(0, -1));
     setSelectedIndex(null);
     setSelectedType(null);
-    setStatusMsg({ text: 'Reverted last change', type: 'info' });
-    setTimeout(() => setStatusMsg(null), 2000);
-  };
+    setStatusMsg({ text: 'Undo', type: 'info' });
+    setTimeout(() => setStatusMsg(null), 1500);
+  }, [floors, obstacles, undoStack]);
+
+  // Redo Function (Ctrl+Y / Ctrl+Shift+Z)
+  const handleRedo = useCallback(() => {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setUndoStack((prev) => [
+      ...prev,
+      { floors: JSON.parse(JSON.stringify(floors)), obstacles: JSON.parse(JSON.stringify(obstacles)) },
+    ]);
+    setFloors(next.floors);
+    setObstacles(next.obstacles);
+    setRedoStack((prev) => prev.slice(0, -1));
+    setSelectedIndex(null);
+    setSelectedType(null);
+    setStatusMsg({ text: 'Redo', type: 'info' });
+    setTimeout(() => setStatusMsg(null), 1500);
+  }, [floors, obstacles, redoStack]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    setStatusMsg({ text: 'Baking collision geometry & rebuilding map...', type: 'info' });
+    setStatusMsg({ text: 'Baking & rebuilding collision maps...', type: 'info' });
     try {
       const res = await fetch('/api/colliders', {
         method: 'POST',
@@ -177,7 +209,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setStatusMsg({ text: '✨ Colliders successfully compiled & applied to campus!', type: 'success' });
+        setStatusMsg({ text: '✨ Colliders successfully compiled & applied!', type: 'success' });
         setTimeout(() => setStatusMsg(null), 4000);
         onSaved?.();
       } else {
@@ -190,7 +222,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     }
   };
 
-  // Coordinates Mapping
+  // Coordinates Transformation
   const worldToScreen = useCallback(
     (wx: number, wy: number) => ({
       sx: wx * zoom + pan.x,
@@ -257,7 +289,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     return { floors: floorMatches, obstacles: obstacleMatches };
   }, [floors, obstacles, searchTerm]);
 
-  // Auto-resize canvas to fill container
+  // Resize canvas to fill container
   useEffect(() => {
     const updateSize = () => {
       const canvas = canvasRef.current;
@@ -270,6 +302,72 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, [isOpen, isSidebarOpen]);
+
+  // Spacebar Pan Event Listeners
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+
+      // Spacebar to pan
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault();
+        setIsSpaceHeld(true);
+      }
+
+      // Undo: Ctrl+Z / Cmd+Z (without Shift)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+
+      // Redo: Ctrl+Y / Cmd+Y OR Ctrl+Shift+Z / Cmd+Shift+Z
+      if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') ||
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z')) {
+        e.preventDefault();
+        handleRedo();
+      }
+
+      // Tool shortcuts
+      if (e.key === 'v' || e.key === 'V') setActiveTool('select');
+      if (e.key === 'f' || e.key === 'F') setActiveTool('add-floor');
+      if (e.key === 'o' || e.key === 'O') setActiveTool('add-solid');
+      if (e.key === 't' || e.key === 'T') setActiveTool('add-through');
+      if (e.key === 'h' || e.key === 'H') setActiveTool('pan');
+
+      // Delete key
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIndex !== null) {
+        e.preventDefault();
+        deleteSelected();
+      }
+
+      // Escape key
+      if (e.key === 'Escape') {
+        if (drawingBox) setDrawingBox(null);
+        else if (selectedItem) {
+          setSelectedType(null);
+          setSelectedIndex(null);
+        } else {
+          onClose();
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpaceHeld(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [isOpen, handleUndo, handleRedo, selectedIndex, drawingBox, selectedItem, onClose]);
 
   // Canvas Render Loop
   useEffect(() => {
@@ -294,7 +392,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     }
 
-    // 2. Optional Grid Lines
+    // 2. Grid lines
     if (showGridLines) {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1 / zoom;
@@ -311,9 +409,9 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       ctx.stroke();
     }
 
-    // World Boundary Glow
+    // World border
     ctx.strokeStyle = 'rgba(99, 102, 241, 0.75)';
-    ctx.lineWidth = 2.5 / zoom;
+    ctx.lineWidth = 2 / zoom;
     ctx.strokeRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
     // 3. Walkable Floors Layer
@@ -323,17 +421,18 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
         const w = f.x2 - f.x1;
         const h = f.y2 - f.y1;
 
-        ctx.fillStyle = isSelected ? `rgba(16, 185, 129, ${Math.min(0.85, overlayOpacity + 0.25)})` : `rgba(16, 185, 129, ${overlayOpacity * 0.75})`;
+        ctx.fillStyle = isSelected
+          ? `rgba(16, 185, 129, ${Math.min(0.85, overlayOpacity + 0.25)})`
+          : `rgba(16, 185, 129, ${overlayOpacity * 0.75})`;
         ctx.fillRect(f.x1, f.y1, w, h);
 
         ctx.strokeStyle = isSelected ? '#10b981' : 'rgba(16, 185, 129, 0.85)';
         ctx.lineWidth = (isSelected ? 2.5 : 1.2) / zoom;
         ctx.strokeRect(f.x1, f.y1, w, h);
 
-        // Label Badge
-        if (zoom >= 0.55) {
+        if (zoom >= 0.5) {
           ctx.fillStyle = isSelected ? '#34d399' : 'rgba(52, 211, 153, 0.85)';
-          ctx.font = `600 ${Math.max(10, Math.round(11 / zoom))}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+          ctx.font = `600 ${Math.max(10, Math.round(11 / zoom))}px ui-sans-serif, system-ui, sans-serif`;
           ctx.fillText(`Floor #${idx + 1}`, f.x1 + 5, f.y1 + 14);
         }
       });
@@ -352,23 +451,26 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
         if (ob.shape === 'ellipse') {
           ctx.beginPath();
           ctx.ellipse(ob.x1 + w / 2, ob.y1 + h / 2, Math.max(1, w / 2), Math.max(1, h / 2), 0, 0, Math.PI * 2);
-          ctx.fillStyle = isSelected ? `rgba(${baseColor}, ${Math.min(0.85, overlayOpacity + 0.3)})` : `rgba(${baseColor}, ${overlayOpacity * 0.8})`;
+          ctx.fillStyle = isSelected
+            ? `rgba(${baseColor}, ${Math.min(0.85, overlayOpacity + 0.3)})`
+            : `rgba(${baseColor}, ${overlayOpacity * 0.8})`;
           ctx.fill();
           ctx.strokeStyle = isSelected ? '#ffffff' : strokeColor;
           ctx.lineWidth = (isSelected ? 2.5 : 1.2) / zoom;
           ctx.stroke();
         } else {
-          ctx.fillStyle = isSelected ? `rgba(${baseColor}, ${Math.min(0.85, overlayOpacity + 0.3)})` : `rgba(${baseColor}, ${overlayOpacity * 0.8})`;
+          ctx.fillStyle = isSelected
+            ? `rgba(${baseColor}, ${Math.min(0.85, overlayOpacity + 0.3)})`
+            : `rgba(${baseColor}, ${overlayOpacity * 0.8})`;
           ctx.fillRect(ob.x1, ob.y1, w, h);
           ctx.strokeStyle = isSelected ? '#ffffff' : strokeColor;
           ctx.lineWidth = (isSelected ? 2.5 : 1.2) / zoom;
           ctx.strokeRect(ob.x1, ob.y1, w, h);
         }
 
-        // Label Badge
-        if (zoom >= 0.5) {
+        if (zoom >= 0.45) {
           ctx.fillStyle = isSelected ? '#ffffff' : strokeColor;
-          ctx.font = `600 ${Math.max(9, Math.round(10 / zoom))}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+          ctx.font = `600 ${Math.max(9, Math.round(10 / zoom))}px ui-sans-serif, system-ui, sans-serif`;
           ctx.fillText(ob.id, ob.x1 + 4, ob.y1 + 13);
         }
       });
@@ -389,9 +491,8 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       ctx.strokeRect(minX, minY, w, h);
       ctx.setLineDash([]);
 
-      // Dimensions tag
       ctx.fillStyle = '#ffffff';
-      ctx.font = `700 ${Math.max(11, Math.round(12 / zoom))}px sans-serif`;
+      ctx.font = `700 ${Math.max(11, Math.round(12 / zoom))}px ui-sans-serif, system-ui, sans-serif`;
       ctx.fillText(`${w} × ${h} px`, minX + 6, minY + 18);
     }
 
@@ -400,14 +501,12 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       const { x1, y1, x2, y2 } = selectedItem;
       const handles = getHandles(selectedItem);
 
-      // Outer active ring
       ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 1.5 / zoom;
       ctx.setLineDash([4 / zoom, 3 / zoom]);
       ctx.strokeRect(x1 - 2 / zoom, y1 - 2 / zoom, (x2 - x1) + 4 / zoom, (y2 - y1) + 4 / zoom);
       ctx.setLineDash([]);
 
-      // Draw 8 prominent interactive handles
       const handleVisualSize = 8 / zoom;
       handles.forEach((h) => {
         ctx.fillStyle = '#38bdf8';
@@ -447,8 +546,8 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
 
-    // Pan mode or middle click or space key held
-    if (e.button === 1 || activeTool === 'pan' || e.altKey || e.shiftKey) {
+    // Spacebar held OR Middle Click OR Pan Tool active -> Start Pan
+    if (isSpaceHeld || e.button === 1 || activeTool === 'pan' || e.altKey) {
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
       return;
@@ -463,10 +562,10 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       return;
     }
 
-    // 2. Check Hit on Selected Box's 8 Resize Handles (SCREEN-SPACE ACCURATE HIT TEST)
+    // 2. Accurate Screen-Space Hit Test for 8 Resize Handles (14px radius)
     if (selectedItem) {
       const handles = getHandles(selectedItem);
-      const SCREEN_HIT_RADIUS = 13; // 13 screen pixels: effortless to click at any zoom!
+      const SCREEN_HIT_RADIUS = 14;
 
       for (const h of handles) {
         const { sx: hsx, sy: hsy } = worldToScreen(h.x, h.y);
@@ -480,7 +579,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       }
     }
 
-    // 3. Check Hit on Obstacles First (Top Layer)
+    // 3. Hit Test Obstacles First (Top Layer)
     let found = false;
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const ob = obstacles[i];
@@ -496,7 +595,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       }
     }
 
-    // 4. Check Hit on Floors Layer
+    // 4. Hit Test Floors Layer
     if (!found) {
       for (let i = floors.length - 1; i >= 0; i--) {
         const f = floors[i];
@@ -513,7 +612,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       }
     }
 
-    // 5. Empty Background Clicked -> Deselect & Start Panning
+    // 5. Clicked on Empty Map -> Deselect & Start Pan
     if (!found) {
       setSelectedType(null);
       setSelectedIndex(null);
@@ -537,7 +636,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       return;
     }
 
-    // Handle Box Drawing
+    // Handle Drawing Box
     if (drawingBox) {
       setDrawingBox((prev) => (prev ? { ...prev, x2: snap(wx), y2: snap(wy) } : null));
       return;
@@ -562,7 +661,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       return;
     }
 
-    // Handle Whole Box Dragging (Move)
+    // Handle Whole Box Moving
     if (isDraggingBox && dragInitialBox && selectedIndex !== null) {
       const deltaX = snap(wx) - snap(dragStartPos.x);
       const deltaY = snap(wy) - snap(dragStartPos.y);
@@ -581,7 +680,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     }
 
     // Dynamic Hover Cursor Feedback
-    if (activeTool === 'pan') {
+    if (isSpaceHeld || activeTool === 'pan') {
       setHoverCursor('grab');
     } else if (activeTool.startsWith('add')) {
       setHoverCursor('crosshair');
@@ -590,7 +689,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       let matchedCursor = null;
       for (const h of handles) {
         const { sx: hsx, sy: hsy } = worldToScreen(h.x, h.y);
-        if (Math.hypot(sx - hsx, sy - hsy) <= 13) {
+        if (Math.hypot(sx - hsx, sy - hsy) <= 14) {
           matchedCursor = h.cursor;
           break;
         }
@@ -712,7 +811,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     setTimeout(() => setStatusMsg(null), 2000);
   };
 
-  // Jump to specific coordinate / Room
+  // Jump to specific Room
   const jumpTo = (targetX: number, targetY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -722,91 +821,49 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     });
   };
 
-  // Keyboard Shortcuts
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') return;
-
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIndex !== null) {
-        e.preventDefault();
-        deleteSelected();
-      } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        undo();
-      } else if (e.key === 'v' || e.key === 'V') {
-        setActiveTool('select');
-      } else if (e.key === 'f' || e.key === 'F') {
-        setActiveTool('add-floor');
-      } else if (e.key === 'o' || e.key === 'O') {
-        setActiveTool('add-solid');
-      } else if (e.key === 't' || e.key === 'T') {
-        setActiveTool('add-through');
-      } else if (e.key === 'h' || e.key === 'H') {
-        setActiveTool('pan');
-      } else if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        duplicateSelected();
-      } else if (e.key === 'Escape') {
-        if (drawingBox) setDrawingBox(null);
-        else if (selectedItem) {
-          setSelectedType(null);
-          setSelectedIndex(null);
-        } else onClose();
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, selectedIndex, drawingBox, selectedItem]);
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4 select-none animate-in fade-in duration-200">
-      <div className="relative flex flex-col w-full h-full max-w-[1720px] max-h-[96vh] bg-[#0f0b0a] border border-amber-900/40 rounded-2xl shadow-2xl overflow-hidden text-neutral-200">
-        {/* Top Studio Header Bar */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-amber-900/30 bg-gradient-to-r from-[#1c1411] via-[#16100e] to-[#1c1411]">
-          {/* Logo & Info */}
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400 shadow-inner">
-              <Layers className="w-5 h-5" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 select-none animate-in fade-in duration-150"
+      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+    >
+      <div className="relative flex flex-col w-full h-full max-w-[1720px] max-h-[97vh] bg-[#110d0b] border border-amber-900/40 rounded-2xl shadow-2xl overflow-hidden text-neutral-200">
+        {/* Sleek Compact Studio Header (Single Line ~46px) */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-amber-900/30 bg-[#16100e] text-xs">
+          {/* Left Title & Status */}
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <div className="p-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400">
+              <Layers className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-extrabold text-base sm:text-lg text-amber-100 tracking-tight">
-                  OpsWArd Collider Studio
-                </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-                  Visual Drag & Resize v2.0
-                </span>
-              </div>
-              <p className="text-xs text-neutral-400 hidden sm:block">
-                Drag corner handles to resize, drag box to move, or select tool to draw walkable zones and furniture barriers.
-              </p>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-amber-100 tracking-tight">Collider Studio</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                v2.1
+              </span>
             </div>
           </div>
 
-          {/* Quick Room Jumps */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 bg-black/40 border border-neutral-800/80 rounded-xl">
+          {/* Center Room Jump Buttons */}
+          <div className="hidden md:flex items-center gap-1 px-2 py-0.5 bg-black/40 border border-neutral-800 rounded-lg overflow-x-auto">
             <span className="text-[10px] font-bold text-neutral-500 uppercase px-1">Jump:</span>
             {ROOM_SHORTCUTS.map((r) => (
               <button
                 key={r.name}
                 onClick={() => jumpTo(r.x, r.y)}
-                className="px-2.5 py-1 text-xs font-medium rounded-lg hover:bg-white/10 text-neutral-300 hover:text-white transition-all flex items-center gap-1"
+                className="px-2 py-0.5 text-[11px] font-medium rounded hover:bg-white/10 text-neutral-300 hover:text-white transition-all flex items-center gap-1 whitespace-nowrap"
               >
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: r.color }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: r.color }} />
                 {r.name}
               </button>
             ))}
           </div>
 
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-2">
+          {/* Right Action Tools */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {statusMsg && (
               <div
-                className={`text-xs px-3 py-1.5 rounded-lg border font-medium flex items-center gap-1.5 shadow-md ${
+                className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium flex items-center gap-1.5 shadow-sm ${
                   statusMsg.type === 'success'
                     ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
                     : statusMsg.type === 'error'
@@ -814,113 +871,121 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                     : 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3 h-3" />
                 {statusMsg.text}
               </div>
             )}
             <button
-              onClick={undo}
-              disabled={history.length === 0}
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
               title="Undo (Ctrl+Z)"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 transition-colors"
             >
               <Undo2 className="w-3.5 h-3.5" /> Undo
             </button>
             <button
+              onClick={handleRedo}
+              disabled={redoStack.length === 0}
+              title="Redo (Ctrl+Y / Ctrl+Shift+Z)"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 transition-colors"
+            >
+              <Redo2 className="w-3.5 h-3.5" /> Redo
+            </button>
+            <button
               onClick={loadColliders}
-              title="Reload from Disk"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 transition-colors"
+              title="Revert all unsaved changes"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Revert
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg shadow-emerald-950/60 border border-emerald-400/30 transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/60 transition-all disabled:opacity-50 ml-1"
             >
-              <Save className="w-4 h-4" /> Save & Apply Map
+              <Save className="w-3.5 h-3.5" /> Save & Apply
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-neutral-400 hover:text-white rounded-xl hover:bg-neutral-800 transition-colors ml-1"
+              className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors ml-1"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Main Workstation Layout */}
+        {/* Main Workspace Layout */}
         <div className="flex flex-1 overflow-hidden relative">
-          {/* Floating Tool Island */}
-          <div className="absolute top-4 left-4 z-20 flex flex-col gap-1 p-1.5 rounded-2xl bg-[#181210]/90 border border-amber-900/40 shadow-2xl backdrop-blur-md">
+          {/* Floating Tool Palette (Left) */}
+          <div className="absolute top-3 left-3 z-20 flex flex-col gap-1 p-1 rounded-xl bg-[#181210]/95 border border-amber-900/40 shadow-xl backdrop-blur-md">
             <button
               onClick={() => setActiveTool('select')}
               title="Select / Move / Resize (V)"
-              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'select'
-                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40'
+                  ? 'bg-amber-600 text-white shadow'
                   : 'text-neutral-300 hover:bg-white/10'
               }`}
             >
-              <MousePointer className="w-4 h-4" />
+              <MousePointer className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Select & Resize (V)</span>
             </button>
             <button
               onClick={() => setActiveTool('pan')}
-              title="Pan Canvas (H / Space+Drag)"
-              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
-                activeTool === 'pan'
-                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40'
+              title="Pan Canvas (H / Hold Spacebar)"
+              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
+                activeTool === 'pan' || isSpaceHeld
+                  ? 'bg-amber-600 text-white shadow'
                   : 'text-neutral-300 hover:bg-white/10'
               }`}
             >
-              <Hand className="w-4 h-4" />
-              <span className="hidden sm:inline">Pan Canvas (H)</span>
+              <Hand className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Pan (Space / H)</span>
             </button>
-            <div className="h-px bg-neutral-800 my-1" />
+            <div className="h-px bg-neutral-800 my-0.5" />
             <button
               onClick={() => setActiveTool('add-floor')}
               title="Draw Walkable Floor (F)"
-              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'add-floor'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40'
+                  ? 'bg-emerald-600 text-white shadow'
                   : 'text-emerald-400 hover:bg-emerald-500/10'
               }`}
             >
-              <Square className="w-4 h-4" />
+              <Square className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Draw Floor (F)</span>
             </button>
             <button
               onClick={() => setActiveTool('add-solid')}
               title="Draw Solid Obstacle (O)"
-              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'add-solid'
-                  ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40'
+                  ? 'bg-rose-600 text-white shadow'
                   : 'text-rose-400 hover:bg-rose-500/10'
               }`}
             >
-              <Square className="w-4 h-4" />
+              <Square className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Solid Obstacle (O)</span>
             </button>
             <button
               onClick={() => setActiveTool('add-through')}
               title="Draw Walk-Behind Scenery (T)"
-              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'add-through'
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40'
+                  ? 'bg-purple-600 text-white shadow'
                   : 'text-purple-400 hover:bg-purple-500/10'
               }`}
             >
-              <Layers className="w-4 h-4" />
+              <Layers className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Walk-Behind (T)</span>
             </button>
           </div>
 
-          {/* Canvas Viewport Area */}
+          {/* Canvas Viewport */}
           <div
             ref={containerRef}
             className="relative flex-1 bg-[#090706] overflow-hidden flex items-center justify-center"
-            style={{ cursor: isPanning ? 'grabbing' : hoverCursor }}
+            style={{ cursor: isPanning || isSpaceHeld ? 'grabbing' : hoverCursor }}
           >
             <canvas
               ref={canvasRef}
@@ -931,26 +996,26 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
               className="block w-full h-full"
             />
 
-            {/* Bottom Floating Viewport Controls */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#181210]/95 border border-amber-900/40 shadow-2xl backdrop-blur-md">
+            {/* Bottom Floating Canvas Navigation Bar */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#181210]/95 border border-amber-900/40 shadow-xl backdrop-blur-md text-xs font-sans">
               <button
                 onClick={() => setZoom((z) => Math.max(0.35, z - 0.15))}
-                className="p-1.5 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg"
+                className="p-1 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded"
                 title="Zoom Out"
               >
-                <ZoomOut className="w-4 h-4" />
+                <ZoomOut className="w-3.5 h-3.5" />
               </button>
-              <span className="text-xs font-mono font-bold text-amber-200 min-w-[50px] text-center">
+              <span className="text-[11px] font-mono font-bold text-amber-200 min-w-[45px] text-center">
                 {Math.round(zoom * 100)}%
               </span>
               <button
                 onClick={() => setZoom((z) => Math.min(3.2, z + 0.15))}
-                className="p-1.5 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg"
+                className="p-1 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded"
                 title="Zoom In"
               >
-                <ZoomIn className="w-4 h-4" />
+                <ZoomIn className="w-3.5 h-3.5" />
               </button>
-              <div className="h-4 w-px bg-neutral-700 mx-1" />
+              <div className="h-3.5 w-px bg-neutral-700 mx-0.5" />
               <button
                 onClick={() => {
                   const canvas = canvasRef.current;
@@ -962,34 +1027,34 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                     y: (canvas.height - WORLD_HEIGHT * fitZoom) / 2,
                   });
                 }}
-                className="px-2.5 py-1 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg font-medium"
+                className="px-2 py-0.5 text-[11px] text-neutral-300 hover:text-white hover:bg-neutral-800 rounded font-medium"
               >
                 Fit Campus
               </button>
-              <div className="h-4 w-px bg-neutral-700 mx-1" />
-              <span className="text-xs text-neutral-400">Snap:</span>
+              <div className="h-3.5 w-px bg-neutral-700 mx-0.5" />
+              <span className="text-[11px] text-neutral-400">Snap:</span>
               {[1, 2, 4, 8, 16].map((s) => (
                 <button
                   key={s}
                   onClick={() => setSnapGrid(s)}
-                  className={`px-2 py-0.5 text-xs font-mono font-bold rounded ${
-                    snapGrid === s ? 'bg-amber-600 text-white' : 'bg-neutral-800/80 text-neutral-400 hover:text-white'
+                  className={`px-1.5 py-0.5 text-[10px] font-mono font-bold rounded ${
+                    snapGrid === s ? 'bg-amber-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:text-white'
                   }`}
                 >
                   {s}px
                 </button>
               ))}
-              <div className="h-4 w-px bg-neutral-700 mx-1" />
-              <span className="text-xs font-mono text-neutral-400">
+              <div className="h-3.5 w-px bg-neutral-700 mx-0.5" />
+              <span className="text-[11px] font-mono text-neutral-400">
                 X: <strong className="text-amber-200">{cursorWorld.x}</strong> Y:{' '}
                 <strong className="text-amber-200">{cursorWorld.y}</strong>
               </span>
             </div>
 
-            {/* Floating Sidebar Toggle Button */}
+            {/* Sidebar Toggle Button */}
             <button
               onClick={() => setIsSidebarOpen((v) => !v)}
-              className="absolute top-4 right-4 z-20 p-2.5 rounded-xl bg-[#181210]/90 border border-amber-900/40 text-neutral-300 hover:text-white shadow-xl backdrop-blur-md"
+              className="absolute top-3 right-3 z-20 p-2 rounded-lg bg-[#181210]/90 border border-amber-900/40 text-neutral-300 hover:text-white shadow-lg backdrop-blur-md"
               title={isSidebarOpen ? 'Hide Inspector' : 'Show Inspector'}
             >
               {isSidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
@@ -998,53 +1063,53 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
 
           {/* Right Inspector & List Sidebar */}
           {isSidebarOpen && (
-            <div className="w-80 sm:w-96 bg-[#15100e] border-l border-amber-900/30 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+            <div className="w-80 bg-[#140e0c] border-l border-amber-900/30 flex flex-col overflow-hidden font-sans">
               {/* Sidebar Tabs */}
-              <div className="flex border-b border-neutral-800/80 bg-[#120d0b]">
+              <div className="flex border-b border-neutral-800/80 bg-[#100b09]">
                 <button
                   onClick={() => setSidebarTab('inspector')}
-                  className={`flex-1 py-2.5 text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+                  className={`flex-1 py-2 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
                     sidebarTab === 'inspector'
                       ? 'border-amber-500 text-amber-300 bg-amber-500/5'
                       : 'border-transparent text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  <Sliders className="w-3.5 h-3.5" /> Inspector
+                  <Sliders className="w-3 h-3" /> Inspector
                 </button>
                 <button
                   onClick={() => setSidebarTab('list')}
-                  className={`flex-1 py-2.5 text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+                  className={`flex-1 py-2 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
                     sidebarTab === 'list'
                       ? 'border-amber-500 text-amber-300 bg-amber-500/5'
                       : 'border-transparent text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  <Layers className="w-3.5 h-3.5" /> Colliders ({floors.length + obstacles.length})
+                  <Layers className="w-3 h-3" /> List ({floors.length + obstacles.length})
                 </button>
                 <button
                   onClick={() => setSidebarTab('settings')}
-                  className={`flex-1 py-2.5 text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+                  className={`flex-1 py-2 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
                     sidebarTab === 'settings'
                       ? 'border-amber-500 text-amber-300 bg-amber-500/5'
                       : 'border-transparent text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  <Eye className="w-3.5 h-3.5" /> Display
+                  <Eye className="w-3 h-3" /> Display
                 </button>
               </div>
 
-              {/* Tab 1: Inspector (Selected Box) */}
+              {/* Tab 1: Inspector */}
               {sidebarTab === 'inspector' && (
-                <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
+                <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-3">
                   {selectedItem ? (
                     <>
                       {/* Selection Header */}
-                      <div className="p-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 flex items-center justify-between shadow-lg">
-                        <div>
-                          <div className="text-[10px] font-bold tracking-wider uppercase text-neutral-400">
-                            Selected {selectedType === 'floor' ? 'Walkable Zone' : 'Obstacle Barrier'}
+                      <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-between shadow-sm">
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 truncate">
+                            {selectedType === 'floor' ? 'Walkable Floor' : 'Obstacle Barrier'}
                           </div>
-                          <div className="text-sm font-extrabold text-amber-200">
+                          <div className="text-xs font-bold text-amber-200 truncate">
                             {selectedType === 'floor' ? `Floor #${selectedIndex! + 1}` : (selectedItem as ObstacleRect).id}
                           </div>
                         </div>
@@ -1052,29 +1117,28 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                           <button
                             onClick={duplicateSelected}
                             title="Duplicate (Ctrl+D)"
-                            className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg"
+                            className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded"
                           >
-                            <Copy className="w-4 h-4" />
+                            <Copy className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={deleteSelected}
-                            title="Delete (Delete Key)"
-                            className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/50 rounded-lg"
+                            title="Delete (Del / Backspace)"
+                            className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
-                      {/* Numeric Micro-Adjuster Inputs */}
-                      <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-3">
-                        <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                          Coordinates & Dimensions
+                      {/* Coordinates & Dimensions Form */}
+                      <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-2.5">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                          Coordinates (px)
                         </span>
 
-                        <div className="grid grid-cols-2 gap-2.5">
-                          {/* X1 */}
-                          <div className="flex flex-col gap-1">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col gap-0.5">
                             <label className="text-[10px] font-mono text-neutral-400">Left (X1)</label>
                             <input
                               type="number"
@@ -1088,11 +1152,10 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                                   setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, x1: val } : ob)));
                                 }
                               }}
-                              className="px-2.5 py-1.5 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded-lg text-amber-200 focus:outline-none focus:border-amber-500"
+                              className="px-2 py-1 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded text-amber-200 focus:outline-none focus:border-amber-500"
                             />
                           </div>
-                          {/* Y1 */}
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-0.5">
                             <label className="text-[10px] font-mono text-neutral-400">Top (Y1)</label>
                             <input
                               type="number"
@@ -1106,11 +1169,10 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                                   setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, y1: val } : ob)));
                                 }
                               }}
-                              className="px-2.5 py-1.5 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded-lg text-amber-200 focus:outline-none focus:border-amber-500"
+                              className="px-2 py-1 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded text-amber-200 focus:outline-none focus:border-amber-500"
                             />
                           </div>
-                          {/* X2 */}
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-0.5">
                             <label className="text-[10px] font-mono text-neutral-400">Right (X2)</label>
                             <input
                               type="number"
@@ -1124,11 +1186,10 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                                   setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, x2: val } : ob)));
                                 }
                               }}
-                              className="px-2.5 py-1.5 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded-lg text-amber-200 focus:outline-none focus:border-amber-500"
+                              className="px-2 py-1 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded text-amber-200 focus:outline-none focus:border-amber-500"
                             />
                           </div>
-                          {/* Y2 */}
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-0.5">
                             <label className="text-[10px] font-mono text-neutral-400">Bottom (Y2)</label>
                             <input
                               type="number"
@@ -1142,40 +1203,36 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                                   setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, y2: val } : ob)));
                                 }
                               }}
-                              className="px-2.5 py-1.5 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded-lg text-amber-200 focus:outline-none focus:border-amber-500"
+                              className="px-2 py-1 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded text-amber-200 focus:outline-none focus:border-amber-500"
                             />
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between pt-1 border-t border-neutral-800 text-xs text-neutral-400 font-mono">
-                          <span>Width: <strong className="text-white">{selectedItem.x2 - selectedItem.x1}px</strong></span>
-                          <span>Height: <strong className="text-white">{selectedItem.y2 - selectedItem.y1}px</strong></span>
+                        <div className="flex items-center justify-between pt-1 border-t border-neutral-800 text-[11px] text-neutral-400">
+                          <span>Width: <strong className="text-white font-mono">{selectedItem.x2 - selectedItem.x1}px</strong></span>
+                          <span>Height: <strong className="text-white font-mono">{selectedItem.y2 - selectedItem.y1}px</strong></span>
                         </div>
                       </div>
 
-                      {/* Obstacle Specific Properties */}
+                      {/* Obstacle Properties */}
                       {selectedType === 'obstacle' && (
-                        <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-3">
-                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
-                            Obstacle Properties
+                        <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-2.5">
+                          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                            Obstacle ID
                           </span>
+                          <input
+                            type="text"
+                            value={(selectedItem as ObstacleRect).id}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setObstacles((prev) =>
+                                prev.map((ob, i) => (i === selectedIndex ? { ...ob, id: val } : ob))
+                              );
+                            }}
+                            className="px-2.5 py-1 text-xs font-mono bg-black/60 border border-neutral-700 rounded text-white focus:outline-none focus:border-amber-500"
+                          />
 
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-mono text-neutral-400">Obstacle ID</label>
-                            <input
-                              type="text"
-                              value={(selectedItem as ObstacleRect).id}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setObstacles((prev) =>
-                                  prev.map((ob, i) => (i === selectedIndex ? { ...ob, id: val } : ob))
-                                );
-                              }}
-                              className="px-2.5 py-1.5 text-xs font-mono bg-black/60 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
-                            />
-                          </div>
-
-                          <label className="flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-neutral-800 cursor-pointer hover:bg-black/60">
+                          <label className="flex items-center gap-2 p-2 rounded-lg bg-black/40 border border-neutral-800 cursor-pointer hover:bg-black/60">
                             <input
                               type="checkbox"
                               checked={Boolean((selectedItem as ObstacleRect).through)}
@@ -1186,45 +1243,44 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                                   prev.map((ob, i) => (i === selectedIndex ? { ...ob, through: val } : ob))
                                 );
                               }}
-                              className="rounded border-neutral-700 bg-neutral-900 text-purple-600 focus:ring-0 w-4 h-4"
+                              className="rounded border-neutral-700 bg-neutral-900 text-purple-600 focus:ring-0 w-3.5 h-3.5"
                             />
                             <div className="flex flex-col">
                               <span className="text-xs font-bold text-purple-300">Walk-Behind (Through)</span>
-                              <span className="text-[10px] text-neutral-400">Player can walk behind this scenery</span>
+                              <span className="text-[10px] text-neutral-400">Player walks behind scenery</span>
                             </div>
                           </label>
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-neutral-500">
-                      <MousePointer className="w-8 h-8 mb-2 opacity-40" />
-                      <p className="text-xs font-medium">Click any collider on the map to inspect, resize, or move it.</p>
-                      <p className="text-[11px] text-neutral-600 mt-2">Or use the tool palette on the left to draw a new one.</p>
+                    <div className="flex-1 flex flex-col items-center justify-center p-4 text-center text-neutral-500">
+                      <MousePointer className="w-6 h-6 mb-1.5 opacity-40" />
+                      <p className="text-xs">Click any box on the map to inspect, resize, or move.</p>
+                      <p className="text-[10px] text-neutral-600 mt-1">Hold Spacebar to pan the map.</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Tab 2: Colliders Search & List */}
+              {/* Tab 2: List */}
               {sidebarTab === 'list' && (
                 <div className="flex-1 flex flex-col overflow-hidden">
-                  <div className="p-3 border-b border-neutral-800/80">
+                  <div className="p-2 border-b border-neutral-800">
                     <div className="relative">
-                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
                       <input
                         type="text"
-                        placeholder="Search colliders (e.g. garden, vault)..."
+                        placeholder="Search colliders..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-black/60 border border-neutral-800 rounded-xl text-neutral-200 focus:outline-none focus:border-amber-500"
+                        className="w-full pl-7 pr-2.5 py-1 text-xs bg-black/60 border border-neutral-800 rounded-lg text-neutral-200 focus:outline-none focus:border-amber-500"
                       />
                     </div>
                   </div>
 
-                  <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-2">
-                    {/* Obstacles List */}
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-rose-400 px-1">
+                  <div className="flex-1 p-2 overflow-y-auto flex flex-col gap-1.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-rose-400 px-1">
                       Obstacles ({filteredList.obstacles.length})
                     </div>
                     {filteredList.obstacles.map((ob) => (
@@ -1236,21 +1292,18 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                           setSidebarTab('inspector');
                           jumpTo((ob.x1 + ob.x2) / 2, (ob.y1 + ob.y2) / 2);
                         }}
-                        className={`p-2.5 rounded-xl border text-xs font-mono flex items-center justify-between cursor-pointer transition-all ${
+                        className={`p-2 rounded-lg border text-xs font-mono flex items-center justify-between cursor-pointer transition-all ${
                           selectedType === 'obstacle' && selectedIndex === ob.index
                             ? 'bg-rose-500/20 border-rose-500/60 text-rose-200'
                             : 'bg-neutral-900/60 border-neutral-800/60 hover:bg-neutral-800 text-neutral-300'
                         }`}
                       >
                         <span className="font-semibold truncate">{ob.id}</span>
-                        <span className="text-[10px] text-neutral-500">
-                          {ob.x2 - ob.x1}×{ob.y2 - ob.y1}
-                        </span>
+                        <span className="text-[10px] text-neutral-500">{ob.x2 - ob.x1}×{ob.y2 - ob.y1}</span>
                       </div>
                     ))}
 
-                    {/* Floors List */}
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 px-1 mt-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 px-1 mt-1.5">
                       Walkable Floors ({filteredList.floors.length})
                     </div>
                     {filteredList.floors.map((f) => (
@@ -1262,64 +1315,62 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                           setSidebarTab('inspector');
                           jumpTo((f.x1 + f.x2) / 2, (f.y1 + f.y2) / 2);
                         }}
-                        className={`p-2.5 rounded-xl border text-xs font-mono flex items-center justify-between cursor-pointer transition-all ${
+                        className={`p-2 rounded-lg border text-xs font-mono flex items-center justify-between cursor-pointer transition-all ${
                           selectedType === 'floor' && selectedIndex === f.index
                             ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200'
                             : 'bg-neutral-900/60 border-neutral-800/60 hover:bg-neutral-800 text-neutral-300'
                         }`}
                       >
                         <span className="font-semibold">{f.id}</span>
-                        <span className="text-[10px] text-neutral-500">
-                          {f.x2 - f.x1}×{f.y2 - f.y1}
-                        </span>
+                        <span className="text-[10px] text-neutral-500">{f.x2 - f.x1}×{f.y2 - f.y1}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Tab 3: Display & Settings */}
+              {/* Tab 3: Display Settings */}
               {sidebarTab === 'settings' && (
-                <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
-                  <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-3">
-                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-3">
+                  <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-2">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
                       Layer Visibility
                     </span>
                     <button
                       onClick={() => setShowFloors((v) => !v)}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-neutral-800 text-xs font-semibold"
+                      className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-neutral-800 text-xs font-semibold"
                     >
-                      <span className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-emerald-500" /> Walkable Floors
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Walkable Floors
                       </span>
-                      {showFloors ? <Eye className="w-4 h-4 text-emerald-400" /> : <EyeOff className="w-4 h-4 text-neutral-600" />}
+                      {showFloors ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5 text-neutral-600" />}
                     </button>
                     <button
                       onClick={() => setShowObstacles((v) => !v)}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-neutral-800 text-xs font-semibold"
+                      className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-neutral-800 text-xs font-semibold"
                     >
-                      <span className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-rose-500" /> Obstacles & Barriers
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Obstacles & Barriers
                       </span>
-                      {showObstacles ? <Eye className="w-4 h-4 text-rose-400" /> : <EyeOff className="w-4 h-4 text-neutral-600" />}
+                      {showObstacles ? <Eye className="w-3.5 h-3.5 text-rose-400" /> : <EyeOff className="w-3.5 h-3.5 text-neutral-600" />}
                     </button>
                     <button
                       onClick={() => setShowGridLines((v) => !v)}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-neutral-800 text-xs font-semibold"
+                      className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-neutral-800 text-xs font-semibold"
                     >
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-1.5">
                         <Grid className="w-3.5 h-3.5 text-neutral-400" /> 32px Grid Lines
                       </span>
-                      {showGridLines ? <Check className="w-4 h-4 text-amber-400" /> : <span className="text-neutral-600">Off</span>}
+                      {showGridLines ? <Check className="w-3.5 h-3.5 text-amber-400" /> : <span className="text-neutral-600">Off</span>}
                     </button>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-3">
-                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                  <div className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-2.5">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
                       Visual Sliders
                     </span>
 
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1">
                       <div className="flex justify-between text-xs">
                         <span className="text-neutral-400">Map Dimmer</span>
                         <span className="font-mono text-amber-200">{Math.round(bgDimmer * 100)}%</span>
@@ -1335,7 +1386,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
                       />
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col gap-1">
                       <div className="flex justify-between text-xs">
                         <span className="text-neutral-400">Collider Overlay Opacity</span>
                         <span className="font-mono text-amber-200">{Math.round(overlayOpacity * 100)}%</span>

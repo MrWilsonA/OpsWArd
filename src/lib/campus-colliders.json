@@ -1,25 +1,25 @@
 {
   "floors": [
     {
-      "x1": 58,
-      "y1": 240,
+      "x1": 82,
+      "y1": 248,
       "x2": 405,
       "y2": 336
     },
     {
       "x1": 370,
       "y1": 170,
-      "x2": 440,
+      "x2": 410,
       "y2": 336
     },
     {
       "x1": 88,
-      "y1": 378,
+      "y1": 488,
       "x2": 400,
       "y2": 622
     },
     {
-      "x1": 96,
+      "x1": 40,
       "y1": 756,
       "x2": 444,
       "y2": 946
@@ -34,7 +34,7 @@
       "x1": 1085,
       "y1": 145,
       "x2": 1500,
-      "y2": 345
+      "y2": 337
     },
     {
       "x1": 1095,
@@ -44,13 +44,13 @@
     },
     {
       "x1": 1020,
-      "y1": 760,
+      "y1": 740,
       "x2": 1500,
       "y2": 947
     },
     {
-      "x1": 440,
-      "y1": 186,
+      "x1": 436,
+      "y1": 198,
       "x2": 1065,
       "y2": 636
     },
@@ -61,14 +61,14 @@
       "y2": 890
     },
     {
-      "x1": 620,
+      "x1": 614,
       "y1": 890,
       "x2": 884,
-      "y2": 966
+      "y2": 948
     },
     {
       "x1": 380,
-      "y1": 168,
+      "y1": 198,
       "x2": 480,
       "y2": 290
     },
@@ -76,19 +76,19 @@
       "x1": 396,
       "y1": 470,
       "x2": 448,
-      "y2": 600
+      "y2": 558
     },
     {
-      "x1": 1056,
-      "y1": 240,
-      "x2": 1098,
-      "y2": 312
+      "x1": 1058,
+      "y1": 200,
+      "x2": 1084,
+      "y2": 298
     },
     {
       "x1": 1056,
       "y1": 480,
       "x2": 1100,
-      "y2": 600
+      "y2": 560
     },
     {
       "x1": 462,
@@ -101,29 +101,71 @@
       "y1": 780,
       "x2": 1042,
       "y2": 878
+    },
+    {
+      "x1": 82,
+      "y1": 170,
+      "x2": 106,
+      "y2": 336
+    },
+    {
+      "x1": 420,
+      "y1": 402,
+      "x2": 464,
+      "y2": 638
+    },
+    {
+      "x1": 704,
+      "y1": 948,
+      "x2": 796,
+      "y2": 1006
+    },
+    {
+      "x1": 504,
+      "y1": 172,
+      "x2": 630,
+      "y2": 200
+    },
+    {
+      "x1": 632,
+      "y1": 184,
+      "x2": 872,
+      "y2": 198
+    },
+    {
+      "x1": 874,
+      "y1": 174,
+      "x2": 990,
+      "y2": 198
+    },
+    {
+      "x1": 1016,
+      "y1": 146,
+      "x2": 1058,
+      "y2": 198
     }
   ],
   "obstacles": [
     {
       "id": "vault-racks",
-      "x1": 100,
-      "y1": 140,
-      "x2": 340,
-      "y2": 240,
+      "x1": 148,
+      "y1": 158,
+      "x2": 342,
+      "y2": 258,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "vault-cabinet",
-      "x1": 338,
-      "y1": 140,
-      "x2": 376,
-      "y2": 240,
+      "x1": 108,
+      "y1": 172,
+      "x2": 144,
+      "y2": 258,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -134,7 +176,7 @@
       "y2": 322,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -145,7 +187,7 @@
       "y2": 464,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -156,7 +198,7 @@
       "y2": 560,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -164,21 +206,21 @@
       "x1": 312,
       "y1": 394,
       "x2": 364,
-      "y2": 472,
+      "y2": 480,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "security-drawer",
-      "x1": 356,
-      "y1": 458,
-      "x2": 398,
-      "y2": 494,
+      "x1": 354,
+      "y1": 414,
+      "x2": 396,
+      "y2": 488,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -189,40 +231,40 @@
       "y2": 620,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "security-cabinet-a",
       "x1": 48,
       "y1": 404,
-      "x2": 92,
+      "x2": 84,
       "y2": 494,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "security-cabinet-b",
       "x1": 48,
       "y1": 500,
-      "x2": 92,
+      "x2": 84,
       "y2": 562,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "security-cabinet-c",
       "x1": 48,
       "y1": 566,
-      "x2": 92,
+      "x2": 84,
       "y2": 626,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -233,18 +275,18 @@
       "y2": 744,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "archive-dresser-a",
       "x1": 40,
       "y1": 670,
-      "x2": 96,
-      "y2": 756,
+      "x2": 74,
+      "y2": 790,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -255,7 +297,7 @@
       "y2": 756,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -266,7 +308,7 @@
       "y2": 756,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -277,7 +319,7 @@
       "y2": 926,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -288,29 +330,18 @@
       "y2": 926,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "archive-cabinet-w",
       "x1": 40,
-      "y1": 828,
-      "x2": 96,
+      "y1": 838,
+      "x2": 70,
       "y2": 948,
       "shape": "rect",
       "through": false,
-      "base": null,
-      "occlude": true
-    },
-    {
-      "id": "archive-plant-sw",
-      "x1": 40,
-      "y1": 770,
-      "x2": 96,
-      "y2": 828,
-      "shape": "rect",
-      "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -321,7 +352,7 @@
       "y2": 946,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -332,7 +363,7 @@
       "y2": 970,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -343,7 +374,7 @@
       "y2": 881,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -354,7 +385,7 @@
       "y2": 881,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -365,62 +396,40 @@
       "y2": 897,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "garden-window-boxes",
-      "x1": 1150,
+      "x1": 1088,
       "y1": 120,
       "x2": 1400,
-      "y2": 170,
+      "y2": 158,
       "shape": "rect",
       "through": false,
-      "base": null,
-      "occlude": true
-    },
-    {
-      "id": "garden-cabinet",
-      "x1": 1086,
-      "y1": 120,
-      "x2": 1130,
-      "y2": 170,
-      "shape": "rect",
-      "through": false,
-      "base": null,
-      "occlude": true
-    },
-    {
-      "id": "garden-console",
-      "x1": 1130,
-      "y1": 120,
-      "x2": 1160,
-      "y2": 170,
-      "shape": "rect",
-      "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "garden-beds",
-      "x1": 1140,
-      "y1": 185,
-      "x2": 1405,
-      "y2": 320,
+      "x1": 1128,
+      "y1": 175,
+      "x2": 1367,
+      "y2": 304,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "garden-lamp-desk",
-      "x1": 1390,
+      "x1": 1396,
       "y1": 120,
       "x2": 1446,
       "y2": 190,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -431,18 +440,18 @@
       "y2": 190,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "garden-workstation",
       "x1": 1377,
-      "y1": 198,
+      "y1": 200,
       "x2": 1500,
-      "y2": 332,
+      "y2": 328,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -453,7 +462,7 @@
       "y2": 465,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -464,7 +473,7 @@
       "y2": 465,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -475,7 +484,7 @@
       "y2": 615,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -486,7 +495,7 @@
       "y2": 650,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -497,7 +506,7 @@
       "y2": 760,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -508,7 +517,7 @@
       "y2": 760,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -519,7 +528,7 @@
       "y2": 760,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -530,7 +539,7 @@
       "y2": 864,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -541,7 +550,7 @@
       "y2": 913,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -552,7 +561,7 @@
       "y2": 913,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -563,7 +572,7 @@
       "y2": 920,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -574,7 +583,7 @@
       "y2": 851,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -585,18 +594,18 @@
       "y2": 862,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "pantry-planter-s",
-      "x1": 1341,
-      "y1": 905,
+      "x1": 1345,
+      "y1": 909,
       "x2": 1453,
       "y2": 947,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -607,7 +616,7 @@
       "y2": 947,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -618,51 +627,40 @@
       "y2": 947,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "nw-pod-wall",
       "x1": 480,
-      "y1": 240,
+      "y1": 254,
       "x2": 508,
       "y2": 430,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "ne-pod-wall",
       "x1": 996,
-      "y1": 240,
-      "x2": 1024,
+      "y1": 250,
+      "x2": 1012,
       "y2": 430,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "nw-desk",
-      "x1": 530,
-      "y1": 250,
+      "x1": 506,
+      "y1": 254,
       "x2": 686,
-      "y2": 355,
+      "y2": 367,
       "shape": "rect",
       "through": false,
-      "base": null,
-      "occlude": true
-    },
-    {
-      "id": "nw-plant",
-      "x1": 495,
-      "y1": 263,
-      "x2": 540,
-      "y2": 349,
-      "shape": "rect",
-      "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -673,73 +671,51 @@
       "y2": 426,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "ne-desk",
-      "x1": 814,
+      "x1": 806,
       "y1": 250,
-      "x2": 970,
+      "x2": 996,
       "y2": 355,
       "shape": "rect",
       "through": false,
-      "base": null,
-      "occlude": true
-    },
-    {
-      "id": "ne-plant",
-      "x1": 812,
-      "y1": 263,
-      "x2": 856,
-      "y2": 349,
-      "shape": "rect",
-      "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "ne-planter",
-      "x1": 896,
-      "y1": 368,
-      "x2": 1018,
+      "x1": 890,
+      "y1": 350,
+      "x2": 1012,
       "y2": 426,
       "shape": "rect",
       "through": false,
-      "base": null,
-      "occlude": true
-    },
-    {
-      "id": "ne-cabinet",
-      "x1": 952,
-      "y1": 248,
-      "x2": 1000,
-      "y2": 355,
-      "shape": "rect",
-      "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "command-table",
-      "x1": 633,
-      "y1": 398,
-      "x2": 873,
-      "y2": 634,
+      "x1": 635,
+      "y1": 406,
+      "x2": 863,
+      "y2": 614,
       "shape": "ellipse",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": false
     },
     {
       "id": "sw-pod-wall",
-      "x1": 478,
-      "y1": 574,
+      "x1": 486,
+      "y1": 586,
       "x2": 508,
       "y2": 810,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -750,7 +726,7 @@
       "y2": 810,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -761,7 +737,7 @@
       "y2": 768,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -772,7 +748,7 @@
       "y2": 810,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -783,18 +759,18 @@
       "y2": 730,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "sw-planter",
-      "x1": 484,
-      "y1": 574,
+      "x1": 486,
+      "y1": 586,
       "x2": 602,
       "y2": 636,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -805,18 +781,18 @@
       "y2": 750,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "se-pod-wall",
       "x1": 996,
-      "y1": 574,
+      "y1": 590,
       "x2": 1024,
       "y2": 810,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -827,7 +803,7 @@
       "y2": 810,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -838,7 +814,7 @@
       "y2": 768,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -849,7 +825,7 @@
       "y2": 810,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -860,7 +836,7 @@
       "y2": 786,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -871,18 +847,18 @@
       "y2": 730,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
       "id": "se-planter",
       "x1": 896,
-      "y1": 574,
+      "y1": 588,
       "x2": 1016,
       "y2": 636,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -893,7 +869,7 @@
       "y2": 750,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -904,7 +880,7 @@
       "y2": 755,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -915,7 +891,7 @@
       "y2": 808,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
       "occlude": true
     },
     {
@@ -926,7 +902,18 @@
       "y2": 808,
       "shape": "rect",
       "through": false,
-      "base": null,
+      "base": 0,
+      "occlude": true
+    },
+    {
+      "id": "vault-cabinet-copy",
+      "x1": 344,
+      "y1": 170,
+      "x2": 368,
+      "y2": 248,
+      "shape": "rect",
+      "through": false,
+      "base": 0,
       "occlude": true
     }
   ]

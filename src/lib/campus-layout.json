@@ -10,20 +10,20 @@
   "occluders": [
     {
       "id": "vault-racks",
-      "x": 100,
-      "y": 140,
-      "width": 240,
+      "x": 148,
+      "y": 158,
+      "width": 194,
       "height": 100,
-      "baseline": 240,
+      "baseline": 258,
       "through": false
     },
     {
       "id": "vault-cabinet",
-      "x": 338,
-      "y": 140,
-      "width": 38,
-      "height": 100,
-      "baseline": 240,
+      "x": 108,
+      "y": 172,
+      "width": 36,
+      "height": 86,
+      "baseline": 258,
       "through": false
     },
     {
@@ -58,17 +58,17 @@
       "x": 312,
       "y": 394,
       "width": 52,
-      "height": 78,
-      "baseline": 472,
+      "height": 86,
+      "baseline": 480,
       "through": false
     },
     {
       "id": "security-drawer",
-      "x": 356,
-      "y": 458,
+      "x": 354,
+      "y": 414,
       "width": 42,
-      "height": 36,
-      "baseline": 494,
+      "height": 74,
+      "baseline": 488,
       "through": false
     },
     {
@@ -84,7 +84,7 @@
       "id": "security-cabinet-a",
       "x": 48,
       "y": 404,
-      "width": 44,
+      "width": 36,
       "height": 90,
       "baseline": 494,
       "through": false
@@ -93,7 +93,7 @@
       "id": "security-cabinet-b",
       "x": 48,
       "y": 500,
-      "width": 44,
+      "width": 36,
       "height": 62,
       "baseline": 562,
       "through": false
@@ -102,7 +102,7 @@
       "id": "security-cabinet-c",
       "x": 48,
       "y": 566,
-      "width": 44,
+      "width": 36,
       "height": 60,
       "baseline": 626,
       "through": false
@@ -120,9 +120,9 @@
       "id": "archive-dresser-a",
       "x": 40,
       "y": 670,
-      "width": 56,
-      "height": 86,
-      "baseline": 756,
+      "width": 34,
+      "height": 120,
+      "baseline": 790,
       "through": false
     },
     {
@@ -164,19 +164,10 @@
     {
       "id": "archive-cabinet-w",
       "x": 40,
-      "y": 828,
-      "width": 56,
-      "height": 120,
+      "y": 838,
+      "width": 30,
+      "height": 110,
       "baseline": 948,
-      "through": false
-    },
-    {
-      "id": "archive-plant-sw",
-      "x": 40,
-      "y": 770,
-      "width": 56,
-      "height": 58,
-      "baseline": 828,
       "through": false
     },
     {
@@ -226,45 +217,27 @@
     },
     {
       "id": "garden-window-boxes",
-      "x": 1150,
+      "x": 1088,
       "y": 120,
-      "width": 250,
-      "height": 50,
-      "baseline": 170,
-      "through": false
-    },
-    {
-      "id": "garden-cabinet",
-      "x": 1086,
-      "y": 120,
-      "width": 44,
-      "height": 50,
-      "baseline": 170,
-      "through": false
-    },
-    {
-      "id": "garden-console",
-      "x": 1130,
-      "y": 120,
-      "width": 30,
-      "height": 50,
-      "baseline": 170,
+      "width": 312,
+      "height": 38,
+      "baseline": 158,
       "through": false
     },
     {
       "id": "garden-beds",
-      "x": 1140,
-      "y": 185,
-      "width": 265,
-      "height": 135,
-      "baseline": 320,
+      "x": 1128,
+      "y": 175,
+      "width": 239,
+      "height": 129,
+      "baseline": 304,
       "through": false
     },
     {
       "id": "garden-lamp-desk",
-      "x": 1390,
+      "x": 1396,
       "y": 120,
-      "width": 56,
+      "width": 50,
       "height": 70,
       "baseline": 190,
       "through": false
@@ -281,10 +254,10 @@
     {
       "id": "garden-workstation",
       "x": 1377,
-      "y": 198,
+      "y": 200,
       "width": 123,
-      "height": 134,
-      "baseline": 332,
+      "height": 128,
+      "baseline": 328,
       "through": false
     },
     {
@@ -406,10 +379,10 @@
     },
     {
       "id": "pantry-planter-s",
-      "x": 1341,
-      "y": 905,
-      "width": 112,
-      "height": 42,
+      "x": 1345,
+      "y": 909,
+      "width": 108,
+      "height": 38,
       "baseline": 947,
       "through": false
     },
@@ -434,37 +407,28 @@
     {
       "id": "nw-pod-wall",
       "x": 480,
-      "y": 240,
+      "y": 254,
       "width": 28,
-      "height": 190,
+      "height": 176,
       "baseline": 430,
       "through": false
     },
     {
       "id": "ne-pod-wall",
       "x": 996,
-      "y": 240,
-      "width": 28,
-      "height": 190,
+      "y": 250,
+      "width": 16,
+      "height": 180,
       "baseline": 430,
       "through": false
     },
     {
       "id": "nw-desk",
-      "x": 530,
-      "y": 250,
-      "width": 156,
-      "height": 105,
-      "baseline": 355,
-      "through": false
-    },
-    {
-      "id": "nw-plant",
-      "x": 495,
-      "y": 263,
-      "width": 45,
-      "height": 86,
-      "baseline": 349,
+      "x": 506,
+      "y": 254,
+      "width": 180,
+      "height": 113,
+      "baseline": 367,
       "through": false
     },
     {
@@ -478,46 +442,28 @@
     },
     {
       "id": "ne-desk",
-      "x": 814,
+      "x": 806,
       "y": 250,
-      "width": 156,
+      "width": 190,
       "height": 105,
       "baseline": 355,
       "through": false
     },
     {
-      "id": "ne-plant",
-      "x": 812,
-      "y": 263,
-      "width": 44,
-      "height": 86,
-      "baseline": 349,
-      "through": false
-    },
-    {
       "id": "ne-planter",
-      "x": 896,
-      "y": 368,
+      "x": 890,
+      "y": 350,
       "width": 122,
-      "height": 58,
+      "height": 76,
       "baseline": 426,
       "through": false
     },
     {
-      "id": "ne-cabinet",
-      "x": 952,
-      "y": 248,
-      "width": 48,
-      "height": 107,
-      "baseline": 355,
-      "through": false
-    },
-    {
       "id": "sw-pod-wall",
-      "x": 478,
-      "y": 574,
-      "width": 30,
-      "height": 236,
+      "x": 486,
+      "y": 586,
+      "width": 22,
+      "height": 224,
       "baseline": 810,
       "through": false
     },
@@ -559,10 +505,10 @@
     },
     {
       "id": "sw-planter",
-      "x": 484,
-      "y": 574,
-      "width": 118,
-      "height": 62,
+      "x": 486,
+      "y": 586,
+      "width": 116,
+      "height": 50,
       "baseline": 636,
       "through": false
     },
@@ -578,9 +524,9 @@
     {
       "id": "se-pod-wall",
       "x": 996,
-      "y": 574,
+      "y": 590,
       "width": 28,
-      "height": 236,
+      "height": 220,
       "baseline": 810,
       "through": false
     },
@@ -632,9 +578,9 @@
     {
       "id": "se-planter",
       "x": 896,
-      "y": 574,
+      "y": 588,
       "width": 120,
-      "height": 62,
+      "height": 48,
       "baseline": 636,
       "through": false
     },
@@ -672,6 +618,15 @@
       "width": 45,
       "height": 45,
       "baseline": 808,
+      "through": false
+    },
+    {
+      "id": "vault-cabinet-copy",
+      "x": 344,
+      "y": 170,
+      "width": 24,
+      "height": 78,
+      "baseline": 248,
       "through": false
     }
   ]
