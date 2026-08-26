@@ -1,21 +1,36 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Activity,
   Check,
   ChevronRight,
+  Copy,
+  Crosshair,
+  Download,
   Eye,
   EyeOff,
+  Grid,
+  Hand,
+  HelpCircle,
+  Info,
   Layers,
   Maximize2,
   Minimize2,
+  MousePointer,
   Move,
+  PanelRightClose,
+  PanelRightOpen,
   Plus,
   RotateCcw,
   Save,
+  Search,
+  Sliders,
+  Sparkles,
   Square,
   Trash2,
   Undo2,
+  Upload,
   X,
   Zap,
   ZoomIn,
@@ -51,13 +66,13 @@ const WORLD_WIDTH = 1536;
 const WORLD_HEIGHT = 1024;
 
 const ROOM_SHORTCUTS = [
-  { name: 'Server Vault', x: 250, y: 250 },
-  { name: 'Security Watch', x: 250, y: 500 },
-  { name: 'Archive Library', x: 270, y: 850 },
-  { name: 'Data Garden', x: 1280, y: 250 },
-  { name: 'Briefing Room', x: 1280, y: 550 },
-  { name: 'Pantry Lounge', x: 1250, y: 850 },
-  { name: 'Central Hall', x: 768, y: 512 },
+  { name: 'Server Vault', x: 250, y: 250, color: '#38bdf8' },
+  { name: 'Security Watch', x: 250, y: 500, color: '#fb923c' },
+  { name: 'Archive Library', x: 270, y: 850, color: '#a78bfa' },
+  { name: 'Data Garden', x: 1280, y: 250, color: '#4ade80' },
+  { name: 'Briefing Room', x: 1280, y: 550, color: '#f43f5e' },
+  { name: 'Pantry Lounge', x: 1250, y: 850, color: '#facc15' },
+  { name: 'Central Hall', x: 768, y: 512, color: '#e2e8f0' },
 ];
 
 export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
@@ -66,6 +81,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   onSaved,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
 
   const [floors, setFloors] = useState<FloorRect[]>([]);
@@ -75,27 +91,40 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   // Selection & Mode
   const [selectedType, setSelectedType] = useState<'floor' | 'obstacle' | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [editMode, setEditMode] = useState<'select' | 'add-floor' | 'add-obstacle' | 'add-through'>('select');
+  const [activeTool, setActiveTool] = useState<'select' | 'pan' | 'add-floor' | 'add-solid' | 'add-through'>('select');
 
   // Viewport / Zoom & Pan
   const [zoom, setZoom] = useState(0.85);
-  const [pan, setPan] = useState({ x: 50, y: 30 });
+  const [pan, setPan] = useState({ x: 60, y: 40 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
-  // Dragging & Resizing Box
+  // Dragging & Resizing State
   const [isDraggingBox, setIsDraggingBox] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [resizeHandle, setResizeHandle] = useState<string | null>(null);
+  const [activeHandle, setActiveHandle] = useState<string | null>(null);
+  const [dragInitialBox, setDragInitialBox] = useState<FloorRect | null>(null);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const [drawingBox, setDrawingBox] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const [hoverCursor, setHoverCursor] = useState<string>('default');
 
-  // Visibility toggles
+  // Live Mouse Tracker
+  const [cursorWorld, setCursorWorld] = useState({ x: 0, y: 0 });
+
+  // Visual Controls
   const [showFloors, setShowFloors] = useState(true);
   const [showObstacles, setShowObstacles] = useState(true);
+  const [showGridLines, setShowGridLines] = useState(false);
+  const [bgDimmer, setBgDimmer] = useState(0.88);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.45);
   const [snapGrid, setSnapGrid] = useState<number>(2);
 
-  // Status message
-  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  // Sidebar Tabs & Search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sidebarTab, setSidebarTab] = useState<'inspector' | 'list' | 'settings'>('inspector');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Status & Notification Toast
+  const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   // Load Initial Colliders
@@ -122,7 +151,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   }, [isOpen, loadColliders]);
 
   const recordHistory = useCallback(() => {
-    setHistory((prev) => [...prev.slice(-15), { floors: [...floors], obstacles: [...obstacles] }]);
+    setHistory((prev) => [...prev.slice(-20), { floors: JSON.parse(JSON.stringify(floors)), obstacles: JSON.parse(JSON.stringify(obstacles)) }]);
   }, [floors, obstacles]);
 
   const undo = () => {
@@ -133,11 +162,13 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     setHistory((prev) => prev.slice(0, -1));
     setSelectedIndex(null);
     setSelectedType(null);
+    setStatusMsg({ text: 'Reverted last change', type: 'info' });
+    setTimeout(() => setStatusMsg(null), 2000);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    setStatusMsg('Compiling & saving layout...');
+    setStatusMsg({ text: 'Baking collision geometry & rebuilding map...', type: 'info' });
     try {
       const res = await fetch('/api/colliders', {
         method: 'POST',
@@ -146,26 +177,33 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setStatusMsg('✅ Colliders saved & compiled successfully!');
-        setTimeout(() => setStatusMsg(null), 3500);
+        setStatusMsg({ text: '✨ Colliders successfully compiled & applied to campus!', type: 'success' });
+        setTimeout(() => setStatusMsg(null), 4000);
         onSaved?.();
       } else {
-        setStatusMsg('❌ Error: ' + (data.error || 'Failed to save'));
+        setStatusMsg({ text: 'Error: ' + (data.error || 'Failed to save colliders'), type: 'error' });
       }
     } catch (err) {
-      setStatusMsg('❌ Error: ' + String(err));
+      setStatusMsg({ text: 'Network Error: ' + String(err), type: 'error' });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // World to Screen / Screen to World coordinates
+  // Coordinates Mapping
+  const worldToScreen = useCallback(
+    (wx: number, wy: number) => ({
+      sx: wx * zoom + pan.x,
+      sy: wy * zoom + pan.y,
+    }),
+    [pan, zoom]
+  );
+
   const screenToWorld = useCallback(
-    (sx: number, sy: number) => {
-      const wx = Math.round((sx - pan.x) / zoom);
-      const wy = Math.round((sy - pan.y) / zoom);
-      return { x: wx, y: wy };
-    },
+    (sx: number, sy: number) => ({
+      wx: Math.round((sx - pan.x) / zoom),
+      wy: Math.round((sy - pan.y) / zoom),
+    }),
     [pan, zoom]
   );
 
@@ -178,13 +216,62 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   );
 
   // Selected item reference
-  const selectedItem = selectedType === 'floor' && selectedIndex !== null
-    ? floors[selectedIndex]
-    : selectedType === 'obstacle' && selectedIndex !== null
-    ? obstacles[selectedIndex]
-    : null;
+  const selectedItem = useMemo(() => {
+    if (selectedType === 'floor' && selectedIndex !== null && floors[selectedIndex]) {
+      return floors[selectedIndex];
+    }
+    if (selectedType === 'obstacle' && selectedIndex !== null && obstacles[selectedIndex]) {
+      return obstacles[selectedIndex];
+    }
+    return null;
+  }, [floors, obstacles, selectedIndex, selectedType]);
 
-  // Render Canvas Loop
+  // Compute 8 handle positions for selected item
+  const getHandles = useCallback((box: FloorRect) => {
+    const { x1, y1, x2, y2 } = box;
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    return [
+      { name: 'nw', x: x1, y: y1, cursor: 'nwse-resize' },
+      { name: 'ne', x: x2, y: y1, cursor: 'nesw-resize' },
+      { name: 'se', x: x2, y: y2, cursor: 'nwse-resize' },
+      { name: 'sw', x: x1, y: y2, cursor: 'nesw-resize' },
+      { name: 'n', x: midX, y: y1, cursor: 'ns-resize' },
+      { name: 's', x: midX, y: y2, cursor: 'ns-resize' },
+      { name: 'w', x: x1, y: midY, cursor: 'ew-resize' },
+      { name: 'e', x: x2, y: midY, cursor: 'ew-resize' },
+    ];
+  }, []);
+
+  // Filtered obstacles & floors for list search
+  const filteredList = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    const floorMatches = floors
+      .map((f, idx) => ({ type: 'floor' as const, index: idx, id: `Floor #${idx + 1}`, x1: f.x1, y1: f.y1, x2: f.x2, y2: f.y2 }))
+      .filter((item) => !term || item.id.toLowerCase().includes(term));
+
+    const obstacleMatches = obstacles
+      .map((ob, idx) => ({ type: 'obstacle' as const, index: idx, id: ob.id, x1: ob.x1, y1: ob.y1, x2: ob.x2, y2: ob.y2, through: ob.through }))
+      .filter((item) => !term || item.id.toLowerCase().includes(term));
+
+    return { floors: floorMatches, obstacles: obstacleMatches };
+  }, [floors, obstacles, searchTerm]);
+
+  // Auto-resize canvas to fill container
+  useEffect(() => {
+    const updateSize = () => {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (!canvas || !container) return;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, [isOpen, isSidebarOpen]);
+
+  // Canvas Render Loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -197,179 +284,203 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
-    // 1. Draw Campus Background
+    // 1. Background Image with dimmer
     if (bgImage?.complete) {
+      ctx.globalAlpha = bgDimmer;
       ctx.drawImage(bgImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+      ctx.globalAlpha = 1.0;
     } else {
-      ctx.fillStyle = '#1e1a18';
+      ctx.fillStyle = '#140f0d';
       ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     }
 
-    // World border
-    ctx.strokeStyle = '#6366f1';
-    ctx.lineWidth = 2 / zoom;
+    // 2. Optional Grid Lines
+    if (showGridLines) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1 / zoom;
+      const step = 32;
+      ctx.beginPath();
+      for (let x = 0; x <= WORLD_WIDTH; x += step) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, WORLD_HEIGHT);
+      }
+      for (let y = 0; y <= WORLD_HEIGHT; y += step) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(WORLD_WIDTH, y);
+      }
+      ctx.stroke();
+    }
+
+    // World Boundary Glow
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.75)';
+    ctx.lineWidth = 2.5 / zoom;
     ctx.strokeRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-    // 2. Draw Walkable Floors
+    // 3. Walkable Floors Layer
     if (showFloors) {
       floors.forEach((f, idx) => {
         const isSelected = selectedType === 'floor' && selectedIndex === idx;
         const w = f.x2 - f.x1;
         const h = f.y2 - f.y1;
 
-        ctx.fillStyle = isSelected ? 'rgba(16, 185, 129, 0.45)' : 'rgba(16, 185, 129, 0.22)';
+        ctx.fillStyle = isSelected ? `rgba(16, 185, 129, ${Math.min(0.85, overlayOpacity + 0.25)})` : `rgba(16, 185, 129, ${overlayOpacity * 0.75})`;
         ctx.fillRect(f.x1, f.y1, w, h);
 
-        ctx.strokeStyle = isSelected ? '#10b981' : 'rgba(16, 185, 129, 0.7)';
-        ctx.lineWidth = (isSelected ? 2.5 : 1) / zoom;
+        ctx.strokeStyle = isSelected ? '#10b981' : 'rgba(16, 185, 129, 0.85)';
+        ctx.lineWidth = (isSelected ? 2.5 : 1.2) / zoom;
         ctx.strokeRect(f.x1, f.y1, w, h);
 
-        // Label
-        ctx.fillStyle = '#10b981';
-        ctx.font = `${Math.max(10, Math.round(11 / zoom))}px monospace`;
-        ctx.fillText(`Floor #${idx + 1}`, f.x1 + 4, f.y1 + 14);
+        // Label Badge
+        if (zoom >= 0.55) {
+          ctx.fillStyle = isSelected ? '#34d399' : 'rgba(52, 211, 153, 0.85)';
+          ctx.font = `600 ${Math.max(10, Math.round(11 / zoom))}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+          ctx.fillText(`Floor #${idx + 1}`, f.x1 + 5, f.y1 + 14);
+        }
       });
     }
 
-    // 3. Draw Obstacles
+    // 4. Obstacles Layer
     if (showObstacles) {
       obstacles.forEach((ob, idx) => {
         const isSelected = selectedType === 'obstacle' && selectedIndex === idx;
         const w = ob.x2 - ob.x1;
         const h = ob.y2 - ob.y1;
 
+        const baseColor = ob.through ? '168, 85, 247' : '239, 68, 68';
+        const strokeColor = ob.through ? '#c084fc' : '#f87171';
+
         if (ob.shape === 'ellipse') {
           ctx.beginPath();
-          ctx.ellipse(ob.x1 + w / 2, ob.y1 + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
-          ctx.fillStyle = isSelected ? 'rgba(239, 68, 68, 0.5)' : 'rgba(239, 68, 68, 0.25)';
+          ctx.ellipse(ob.x1 + w / 2, ob.y1 + h / 2, Math.max(1, w / 2), Math.max(1, h / 2), 0, 0, Math.PI * 2);
+          ctx.fillStyle = isSelected ? `rgba(${baseColor}, ${Math.min(0.85, overlayOpacity + 0.3)})` : `rgba(${baseColor}, ${overlayOpacity * 0.8})`;
           ctx.fill();
-          ctx.strokeStyle = isSelected ? '#ef4444' : 'rgba(239, 68, 68, 0.75)';
-          ctx.lineWidth = (isSelected ? 2.5 : 1) / zoom;
+          ctx.strokeStyle = isSelected ? '#ffffff' : strokeColor;
+          ctx.lineWidth = (isSelected ? 2.5 : 1.2) / zoom;
           ctx.stroke();
         } else {
-          ctx.fillStyle = ob.through
-            ? isSelected ? 'rgba(168, 85, 247, 0.5)' : 'rgba(168, 85, 247, 0.25)'
-            : isSelected ? 'rgba(239, 68, 68, 0.5)' : 'rgba(239, 68, 68, 0.25)';
+          ctx.fillStyle = isSelected ? `rgba(${baseColor}, ${Math.min(0.85, overlayOpacity + 0.3)})` : `rgba(${baseColor}, ${overlayOpacity * 0.8})`;
           ctx.fillRect(ob.x1, ob.y1, w, h);
-
-          ctx.strokeStyle = ob.through
-            ? isSelected ? '#a855f7' : 'rgba(168, 85, 247, 0.75)'
-            : isSelected ? '#ef4444' : 'rgba(239, 68, 68, 0.75)';
-          ctx.lineWidth = (isSelected ? 2.5 : 1) / zoom;
+          ctx.strokeStyle = isSelected ? '#ffffff' : strokeColor;
+          ctx.lineWidth = (isSelected ? 2.5 : 1.2) / zoom;
           ctx.strokeRect(ob.x1, ob.y1, w, h);
         }
 
-        // Label
-        ctx.fillStyle = ob.through ? '#c084fc' : '#f87171';
-        ctx.font = `${Math.max(9, Math.round(10 / zoom))}px monospace`;
-        ctx.fillText(ob.id, ob.x1 + 4, ob.y1 + 13);
+        // Label Badge
+        if (zoom >= 0.5) {
+          ctx.fillStyle = isSelected ? '#ffffff' : strokeColor;
+          ctx.font = `600 ${Math.max(9, Math.round(10 / zoom))}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+          ctx.fillText(ob.id, ob.x1 + 4, ob.y1 + 13);
+        }
       });
     }
 
-    // 4. Draw Current Drag/Drawing Box
+    // 5. Active Drawing Preview Box
     if (drawingBox) {
       const minX = Math.min(drawingBox.x1, drawingBox.x2);
       const minY = Math.min(drawingBox.y1, drawingBox.y2);
       const w = Math.abs(drawingBox.x2 - drawingBox.x1);
       const h = Math.abs(drawingBox.y2 - drawingBox.y1);
 
-      ctx.fillStyle = editMode === 'add-floor' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)';
+      ctx.fillStyle = activeTool === 'add-floor' ? 'rgba(16, 185, 129, 0.45)' : 'rgba(239, 68, 68, 0.45)';
       ctx.fillRect(minX, minY, w, h);
       ctx.strokeStyle = '#ffffff';
-      ctx.setLineDash([4 / zoom, 4 / zoom]);
-      ctx.lineWidth = 2 / zoom;
+      ctx.setLineDash([5 / zoom, 5 / zoom]);
+      ctx.lineWidth = 2.5 / zoom;
       ctx.strokeRect(minX, minY, w, h);
       ctx.setLineDash([]);
+
+      // Dimensions tag
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 ${Math.max(11, Math.round(12 / zoom))}px sans-serif`;
+      ctx.fillText(`${w} × ${h} px`, minX + 6, minY + 18);
     }
 
-    // 5. Draw Handles on Selected Box
+    // 6. Selected Box Highlight & Resize Handles
     if (selectedItem) {
       const { x1, y1, x2, y2 } = selectedItem;
-      const handleSize = 7 / zoom;
-      const handles = [
-        { name: 'nw', x: x1, y: y1 },
-        { name: 'ne', x: x2, y: y1 },
-        { name: 'se', x: x2, y: y2 },
-        { name: 'sw', x: x1, y: y2 },
-        { name: 'n', x: (x1 + x2) / 2, y: y1 },
-        { name: 's', x: (x1 + x2) / 2, y: y2 },
-        { name: 'w', x: x1, y: (y1 + y2) / 2 },
-        { name: 'e', x: x2, y: (y1 + y2) / 2 },
-      ];
+      const handles = getHandles(selectedItem);
 
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#000000';
+      // Outer active ring
+      ctx.strokeStyle = '#38bdf8';
       ctx.lineWidth = 1.5 / zoom;
+      ctx.setLineDash([4 / zoom, 3 / zoom]);
+      ctx.strokeRect(x1 - 2 / zoom, y1 - 2 / zoom, (x2 - x1) + 4 / zoom, (y2 - y1) + 4 / zoom);
+      ctx.setLineDash([]);
+
+      // Draw 8 prominent interactive handles
+      const handleVisualSize = 8 / zoom;
       handles.forEach((h) => {
-        ctx.fillRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
-        ctx.strokeRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(h.x - handleVisualSize / 2, h.y - handleVisualSize / 2, handleVisualSize, handleVisualSize);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(h.x - (handleVisualSize - 3 / zoom) / 2, h.y - (handleVisualSize - 3 / zoom) / 2, handleVisualSize - 3 / zoom, handleVisualSize - 3 / zoom);
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 1 / zoom;
+        ctx.strokeRect(h.x - handleVisualSize / 2, h.y - handleVisualSize / 2, handleVisualSize, handleVisualSize);
       });
     }
 
     ctx.restore();
   }, [
+    activeTool,
+    bgDimmer,
     bgImage,
     drawingBox,
-    editMode,
     floors,
+    getHandles,
     obstacles,
+    overlayOpacity,
     pan,
     selectedIndex,
     selectedItem,
     selectedType,
     showFloors,
+    showGridLines,
     showObstacles,
     zoom,
   ]);
 
-  // Mouse / Pointer Events on Canvas
-  const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Pointer Down Handling
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
 
-    // Middle click or Space/Alt key -> Pan
-    if (e.button === 1 || e.altKey || e.shiftKey) {
+    // Pan mode or middle click or space key held
+    if (e.button === 1 || activeTool === 'pan' || e.altKey || e.shiftKey) {
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
       return;
     }
 
-    const { x: wx, y: wy } = screenToWorld(sx, sy);
+    const { wx, wy } = screenToWorld(sx, sy);
 
-    if (editMode === 'add-floor' || editMode === 'add-obstacle' || editMode === 'add-through') {
+    // 1. Draw Mode
+    if (activeTool === 'add-floor' || activeTool === 'add-solid' || activeTool === 'add-through') {
       recordHistory();
       setDrawingBox({ x1: snap(wx), y1: snap(wy), x2: snap(wx), y2: snap(wy) });
       return;
     }
 
-    // Check if clicked a handle on the selected item
+    // 2. Check Hit on Selected Box's 8 Resize Handles (SCREEN-SPACE ACCURATE HIT TEST)
     if (selectedItem) {
-      const { x1, y1, x2, y2 } = selectedItem;
-      const hitRadius = 8 / zoom;
-      const handles: Record<string, { x: number; y: number }> = {
-        nw: { x: x1, y: y1 },
-        ne: { x: x2, y: y1 },
-        se: { x: x2, y: y2 },
-        sw: { x: x1, y: y2 },
-        n: { x: (x1 + x2) / 2, y: y1 },
-        s: { x: (x1 + x2) / 2, y: y2 },
-        w: { x: x1, y: (y1 + y2) / 2 },
-        e: { x: x2, y: (y1 + y2) / 2 },
-      };
+      const handles = getHandles(selectedItem);
+      const SCREEN_HIT_RADIUS = 13; // 13 screen pixels: effortless to click at any zoom!
 
-      for (const [name, pt] of Object.entries(handles)) {
-        if (Math.hypot(wx - pt.x, wy - pt.y) <= hitRadius) {
+      for (const h of handles) {
+        const { sx: hsx, sy: hsy } = worldToScreen(h.x, h.y);
+        if (Math.hypot(sx - hsx, sy - hsy) <= SCREEN_HIT_RADIUS) {
           recordHistory();
-          setResizeHandle(name);
-          setDragStart({ x: wx, y: wy });
+          setActiveHandle(h.name);
+          setDragInitialBox({ ...selectedItem });
+          setDragStartPos({ x: wx, y: wy });
           return;
         }
       }
     }
 
-    // Check hit on Obstacles first (top layer)
+    // 3. Check Hit on Obstacles First (Top Layer)
     let found = false;
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const ob = obstacles[i];
@@ -378,13 +489,14 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
         setSelectedType('obstacle');
         setSelectedIndex(i);
         setIsDraggingBox(true);
-        setDragStart({ x: wx, y: wy });
+        setDragInitialBox({ x1: ob.x1, y1: ob.y1, x2: ob.x2, y2: ob.y2 });
+        setDragStartPos({ x: wx, y: wy });
         found = true;
         break;
       }
     }
 
-    // Check hit on Floors
+    // 4. Check Hit on Floors Layer
     if (!found) {
       for (let i = floors.length - 1; i >= 0; i--) {
         const f = floors[i];
@@ -393,91 +505,110 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
           setSelectedType('floor');
           setSelectedIndex(i);
           setIsDraggingBox(true);
-          setDragStart({ x: wx, y: wy });
+          setDragInitialBox({ ...f });
+          setDragStartPos({ x: wx, y: wy });
           found = true;
           break;
         }
       }
     }
 
+    // 5. Empty Background Clicked -> Deselect & Start Panning
     if (!found) {
       setSelectedType(null);
       setSelectedIndex(null);
-      // If clicked empty space, start panning
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
     }
   };
 
-  const onMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Pointer Move Handling
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const { wx, wy } = screenToWorld(sx, sy);
+    setCursorWorld({ x: wx, y: wy });
+
+    // Handle Pan
     if (isPanning) {
       setPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
       return;
     }
 
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    const { x: wx, y: wy } = screenToWorld(sx, sy);
-
+    // Handle Box Drawing
     if (drawingBox) {
       setDrawingBox((prev) => (prev ? { ...prev, x2: snap(wx), y2: snap(wy) } : null));
       return;
     }
 
-    if (resizeHandle && selectedItem && selectedIndex !== null) {
-      const dx = snap(wx) - snap(dragStart.x);
-      const dy = snap(wy) - snap(dragStart.y);
-      if (dx === 0 && dy === 0) return;
+    // Handle Resize Handle Dragging
+    if (activeHandle && dragInitialBox && selectedIndex !== null) {
+      const deltaX = snap(wx) - snap(dragStartPos.x);
+      const deltaY = snap(wy) - snap(dragStartPos.y);
 
-      const updateRect = (r: FloorRect) => {
-        let { x1, y1, x2, y2 } = r;
-        if (resizeHandle.includes('w')) x1 += dx;
-        if (resizeHandle.includes('e')) x2 += dx;
-        if (resizeHandle.includes('n')) y1 += dy;
-        if (resizeHandle.includes('s')) y2 += dy;
-        return {
-          ...r,
-          x1: Math.min(x1, x2 - 4),
-          y1: Math.min(y1, y2 - 4),
-          x2: Math.max(x2, x1 + 4),
-          y2: Math.max(y2, y1 + 4),
-        };
-      };
+      let { x1, y1, x2, y2 } = dragInitialBox;
+      if (activeHandle.includes('w')) x1 = Math.min(x1 + deltaX, x2 - 4);
+      if (activeHandle.includes('e')) x2 = Math.max(x2 + deltaX, x1 + 4);
+      if (activeHandle.includes('n')) y1 = Math.min(y1 + deltaY, y2 - 4);
+      if (activeHandle.includes('s')) y2 = Math.max(y2 + deltaY, y1 + 4);
 
       if (selectedType === 'floor') {
-        setFloors((prev) => prev.map((f, i) => (i === selectedIndex ? (updateRect(f) as FloorRect) : f)));
+        setFloors((prev) => prev.map((f, i) => (i === selectedIndex ? { ...f, x1, y1, x2, y2 } : f)));
       } else if (selectedType === 'obstacle') {
-        setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? (updateRect(ob) as ObstacleRect) : ob)));
+        setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, x1, y1, x2, y2 } : ob)));
       }
-      setDragStart({ x: wx, y: wy });
       return;
     }
 
-    if (isDraggingBox && selectedItem && selectedIndex !== null) {
-      const dx = snap(wx) - snap(dragStart.x);
-      const dy = snap(wy) - snap(dragStart.y);
-      if (dx === 0 && dy === 0) return;
+    // Handle Whole Box Dragging (Move)
+    if (isDraggingBox && dragInitialBox && selectedIndex !== null) {
+      const deltaX = snap(wx) - snap(dragStartPos.x);
+      const deltaY = snap(wy) - snap(dragStartPos.y);
 
-      const moveRect = (r: FloorRect) => ({
-        ...r,
-        x1: r.x1 + dx,
-        y1: r.y1 + dy,
-        x2: r.x2 + dx,
-        y2: r.y2 + dy,
-      });
+      const x1 = dragInitialBox.x1 + deltaX;
+      const y1 = dragInitialBox.y1 + deltaY;
+      const x2 = dragInitialBox.x2 + deltaX;
+      const y2 = dragInitialBox.y2 + deltaY;
 
       if (selectedType === 'floor') {
-        setFloors((prev) => prev.map((f, i) => (i === selectedIndex ? (moveRect(f) as FloorRect) : f)));
+        setFloors((prev) => prev.map((f, i) => (i === selectedIndex ? { ...f, x1, y1, x2, y2 } : f)));
       } else if (selectedType === 'obstacle') {
-        setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? (moveRect(ob) as ObstacleRect) : ob)));
+        setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, x1, y1, x2, y2 } : ob)));
       }
-      setDragStart({ x: wx, y: wy });
+      return;
+    }
+
+    // Dynamic Hover Cursor Feedback
+    if (activeTool === 'pan') {
+      setHoverCursor('grab');
+    } else if (activeTool.startsWith('add')) {
+      setHoverCursor('crosshair');
+    } else if (selectedItem) {
+      const handles = getHandles(selectedItem);
+      let matchedCursor = null;
+      for (const h of handles) {
+        const { sx: hsx, sy: hsy } = worldToScreen(h.x, h.y);
+        if (Math.hypot(sx - hsx, sy - hsy) <= 13) {
+          matchedCursor = h.cursor;
+          break;
+        }
+      }
+      if (matchedCursor) {
+        setHoverCursor(matchedCursor);
+      } else if (wx >= selectedItem.x1 && wx <= selectedItem.x2 && wy >= selectedItem.y1 && wy <= selectedItem.y2) {
+        setHoverCursor('move');
+      } else {
+        setHoverCursor('default');
+      }
+    } else {
+      setHoverCursor('default');
     }
   };
 
-  const onMouseUp = () => {
+  // Pointer Up Handling
+  const handlePointerUp = () => {
     if (drawingBox) {
       const minX = Math.min(drawingBox.x1, drawingBox.x2);
       const maxX = Math.max(drawingBox.x1, drawingBox.x2);
@@ -485,47 +616,51 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       const maxY = Math.max(drawingBox.y1, drawingBox.y2);
 
       if (maxX - minX >= 6 && maxY - minY >= 6) {
-        if (editMode === 'add-floor') {
+        if (activeTool === 'add-floor') {
           const newFloor: FloorRect = { x1: minX, y1: minY, x2: maxX, y2: maxY };
           setFloors((prev) => [...prev, newFloor]);
           setSelectedType('floor');
           setSelectedIndex(floors.length);
-        } else if (editMode === 'add-obstacle' || editMode === 'add-through') {
+          setStatusMsg({ text: `Added Floor #${floors.length + 1}`, type: 'success' });
+        } else if (activeTool === 'add-solid' || activeTool === 'add-through') {
           const newObs: ObstacleRect = {
-            id: `custom-${Date.now().toString().slice(-4)}`,
+            id: `obs-${Date.now().toString().slice(-4)}`,
             x1: minX,
             y1: minY,
             x2: maxX,
             y2: maxY,
             shape: 'rect',
-            through: editMode === 'add-through',
+            through: activeTool === 'add-through',
             occlude: true,
           };
           setObstacles((prev) => [...prev, newObs]);
           setSelectedType('obstacle');
           setSelectedIndex(obstacles.length);
+          setStatusMsg({ text: `Added Obstacle: ${newObs.id}`, type: 'success' });
         }
+        setTimeout(() => setStatusMsg(null), 2500);
       }
       setDrawingBox(null);
-      setEditMode('select');
+      setActiveTool('select');
     }
 
     setIsPanning(false);
     setIsDraggingBox(false);
-    setResizeHandle(null);
+    setActiveHandle(null);
+    setDragInitialBox(null);
   };
 
-  const onWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+  // Zoom on Wheel
+  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
     e.preventDefault();
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
-    const newZoom = Math.min(2.8, Math.max(0.4, zoom * zoomFactor));
+    const factor = e.deltaY < 0 ? 1.14 : 0.88;
+    const newZoom = Math.min(3.2, Math.max(0.35, zoom * factor));
 
-    // Zoom centered around cursor
     setPan({
       x: mouseX - ((mouseX - pan.x) / zoom) * newZoom,
       y: mouseY - ((mouseY - pan.y) / zoom) * newZoom,
@@ -533,18 +668,24 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     setZoom(newZoom);
   };
 
+  // Delete Selected
   const deleteSelected = () => {
     if (selectedIndex === null) return;
     recordHistory();
     if (selectedType === 'floor') {
       setFloors((prev) => prev.filter((_, i) => i !== selectedIndex));
+      setStatusMsg({ text: 'Deleted floor box', type: 'info' });
     } else if (selectedType === 'obstacle') {
+      const name = obstacles[selectedIndex]?.id;
       setObstacles((prev) => prev.filter((_, i) => i !== selectedIndex));
+      setStatusMsg({ text: `Deleted obstacle: ${name}`, type: 'info' });
     }
     setSelectedType(null);
     setSelectedIndex(null);
+    setTimeout(() => setStatusMsg(null), 2000);
   };
 
+  // Duplicate Selected
   const duplicateSelected = () => {
     if (!selectedItem || selectedIndex === null) return;
     recordHistory();
@@ -567,256 +708,243 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       setObstacles((prev) => [...prev, copy]);
       setSelectedIndex(obstacles.length);
     }
+    setStatusMsg({ text: 'Duplicated collider box', type: 'success' });
+    setTimeout(() => setStatusMsg(null), 2000);
   };
 
-  const jumpToRoom = (rx: number, ry: number) => {
+  // Jump to specific coordinate / Room
+  const jumpTo = (targetX: number, targetY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const cw = canvas.width;
-    const ch = canvas.height;
     setPan({
-      x: cw / 2 - rx * zoom,
-      y: ch / 2 - ry * zoom,
+      x: canvas.width / 2 - targetX * zoom,
+      y: canvas.height / 2 - targetY * zoom,
     });
   };
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT') return;
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIndex !== null) {
+        e.preventDefault();
+        deleteSelected();
+      } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        undo();
+      } else if (e.key === 'v' || e.key === 'V') {
+        setActiveTool('select');
+      } else if (e.key === 'f' || e.key === 'F') {
+        setActiveTool('add-floor');
+      } else if (e.key === 'o' || e.key === 'O') {
+        setActiveTool('add-solid');
+      } else if (e.key === 't' || e.key === 'T') {
+        setActiveTool('add-through');
+      } else if (e.key === 'h' || e.key === 'H') {
+        setActiveTool('pan');
+      } else if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        duplicateSelected();
+      } else if (e.key === 'Escape') {
+        if (drawingBox) setDrawingBox(null);
+        else if (selectedItem) {
+          setSelectedType(null);
+          setSelectedIndex(null);
+        } else onClose();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, selectedIndex, drawingBox, selectedItem]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 select-none">
-      <div className="relative flex flex-col w-full h-full max-w-[1600px] max-h-[95vh] bg-[#120e0d] border border-amber-900/40 rounded-2xl shadow-2xl overflow-hidden text-neutral-200">
-        {/* Top Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-amber-900/30 bg-[#1a1412]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4 select-none animate-in fade-in duration-200">
+      <div className="relative flex flex-col w-full h-full max-w-[1720px] max-h-[96vh] bg-[#0f0b0a] border border-amber-900/40 rounded-2xl shadow-2xl overflow-hidden text-neutral-200">
+        {/* Top Studio Header Bar */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-amber-900/30 bg-gradient-to-r from-[#1c1411] via-[#16100e] to-[#1c1411]">
+          {/* Logo & Info */}
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400">
+            <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400 shadow-inner">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-bold text-lg text-amber-100 flex items-center gap-2">
-                Campus Collider & Floor Visual Editor
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  Drag & Drop
+              <div className="flex items-center gap-2">
+                <h2 className="font-extrabold text-base sm:text-lg text-amber-100 tracking-tight">
+                  OpsWArd Collider Studio
+                </h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+                  Visual Drag & Resize v2.0
                 </span>
-              </h2>
-              <p className="text-xs text-neutral-400">
-                Click & drag boxes to edit boundaries, or click empty space in Add mode to draw new colliders.
+              </div>
+              <p className="text-xs text-neutral-400 hidden sm:block">
+                Drag corner handles to resize, drag box to move, or select tool to draw walkable zones and furniture barriers.
               </p>
             </div>
           </div>
 
-          {/* Action buttons & status */}
-          <div className="flex items-center gap-3">
+          {/* Quick Room Jumps */}
+          <div className="hidden lg:flex items-center gap-1.5 px-2 py-1 bg-black/40 border border-neutral-800/80 rounded-xl">
+            <span className="text-[10px] font-bold text-neutral-500 uppercase px-1">Jump:</span>
+            {ROOM_SHORTCUTS.map((r) => (
+              <button
+                key={r.name}
+                onClick={() => jumpTo(r.x, r.y)}
+                className="px-2.5 py-1 text-xs font-medium rounded-lg hover:bg-white/10 text-neutral-300 hover:text-white transition-all flex items-center gap-1"
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: r.color }} />
+                {r.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2">
             {statusMsg && (
-              <div className="text-xs px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-medium animate-pulse">
-                {statusMsg}
+              <div
+                className={`text-xs px-3 py-1.5 rounded-lg border font-medium flex items-center gap-1.5 shadow-md ${
+                  statusMsg.type === 'success'
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                    : statusMsg.type === 'error'
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-300'
+                    : 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {statusMsg.text}
               </div>
             )}
             <button
               onClick={undo}
               disabled={history.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 transition-colors"
+              title="Undo (Ctrl+Z)"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 transition-colors"
             >
-              <Undo2 className="w-4 h-4" /> Undo
+              <Undo2 className="w-3.5 h-3.5" /> Undo
             </button>
             <button
               onClick={loadColliders}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
+              title="Reload from Disk"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 transition-colors"
             >
-              <RotateCcw className="w-4 h-4" /> Reset
+              <RotateCcw className="w-3.5 h-3.5" /> Revert
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-5 py-2 text-sm font-bold rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/40 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-lg shadow-emerald-950/60 border border-emerald-400/30 transition-all disabled:opacity-50"
             >
-              <Save className="w-4 h-4" /> Save & Rebuild Map
+              <Save className="w-4 h-4" /> Save & Apply Map
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors"
+              className="p-2 text-neutral-400 hover:text-white rounded-xl hover:bg-neutral-800 transition-colors ml-1"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Main Body */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left Toolbar */}
-          <div className="w-64 bg-[#16110f] border-r border-amber-900/20 p-4 flex flex-col gap-4 overflow-y-auto">
-            {/* Tool Mode */}
-            <div>
-              <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Editor Tool</div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setEditMode('select')}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                    editMode === 'select'
-                      ? 'bg-amber-600 text-white border-amber-500 shadow-md'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:bg-neutral-800'
-                  }`}
-                >
-                  <Move className="w-3.5 h-3.5" /> Select / Move
-                </button>
-                <button
-                  onClick={() => setEditMode('add-floor')}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                    editMode === 'add-floor'
-                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-md'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:bg-neutral-800'
-                  }`}
-                >
-                  <Plus className="w-3.5 h-3.5 text-emerald-400" /> Draw Floor
-                </button>
-                <button
-                  onClick={() => setEditMode('add-obstacle')}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                    editMode === 'add-obstacle'
-                      ? 'bg-rose-600 text-white border-rose-500 shadow-md'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:bg-neutral-800'
-                  }`}
-                >
-                  <Plus className="w-3.5 h-3.5 text-rose-400" /> Solid Object
-                </button>
-                <button
-                  onClick={() => setEditMode('add-through')}
-                  className={`flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border transition-colors ${
-                    editMode === 'add-through'
-                      ? 'bg-purple-600 text-white border-purple-500 shadow-md'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:bg-neutral-800'
-                  }`}
-                >
-                  <Plus className="w-3.5 h-3.5 text-purple-400" /> Walk-Behind
-                </button>
-              </div>
-            </div>
-
-            {/* Layer Visibility */}
-            <div>
-              <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Layers</div>
-              <div className="flex flex-col gap-1.5">
-                <button
-                  onClick={() => setShowFloors((v) => !v)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-900/80 border border-neutral-800 text-xs font-medium text-neutral-300 hover:bg-neutral-800"
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded bg-emerald-500/80 inline-block" /> Walkable Floors ({floors.length})
-                  </span>
-                  {showFloors ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5 text-neutral-500" />}
-                </button>
-                <button
-                  onClick={() => setShowObstacles((v) => !v)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-900/80 border border-neutral-800 text-xs font-medium text-neutral-300 hover:bg-neutral-800"
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded bg-rose-500/80 inline-block" /> Obstacles ({obstacles.length})
-                  </span>
-                  {showObstacles ? <Eye className="w-3.5 h-3.5 text-rose-400" /> : <EyeOff className="w-3.5 h-3.5 text-neutral-500" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Room Shortcuts */}
-            <div>
-              <div className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Jump to Room</div>
-              <div className="grid grid-cols-2 gap-1.5">
-                {ROOM_SHORTCUTS.map((r) => (
-                  <button
-                    key={r.name}
-                    onClick={() => jumpToRoom(r.x, r.y)}
-                    className="px-2.5 py-1.5 text-left text-xs bg-neutral-900/60 hover:bg-amber-950/40 border border-neutral-800/80 hover:border-amber-700/50 rounded-lg text-neutral-300 hover:text-amber-200 transition-colors truncate"
-                  >
-                    {r.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Selected Box Details */}
-            {selectedItem && (
-              <div className="mt-auto p-3 rounded-xl bg-neutral-900/90 border border-amber-900/30 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-300 uppercase">
-                    {selectedType === 'floor' ? `Floor #${selectedIndex! + 1}` : (selectedItem as ObstacleRect).id}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={duplicateSelected}
-                      title="Duplicate"
-                      className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={deleteSelected}
-                      title="Delete"
-                      className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300">
-                  <div>X1: <span className="text-amber-200">{selectedItem.x1}</span></div>
-                  <div>Y1: <span className="text-amber-200">{selectedItem.y1}</span></div>
-                  <div>X2: <span className="text-amber-200">{selectedItem.x2}</span></div>
-                  <div>Y2: <span className="text-amber-200">{selectedItem.y2}</span></div>
-                  <div className="col-span-2 text-neutral-400">
-                    Size: {selectedItem.x2 - selectedItem.x1} × {selectedItem.y2 - selectedItem.y1} px
-                  </div>
-                </div>
-
-                {selectedType === 'obstacle' && (
-                  <div className="pt-1 flex flex-col gap-1 text-xs">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={Boolean((selectedItem as ObstacleRect).through)}
-                        onChange={(e) => {
-                          recordHistory();
-                          const val = e.target.checked;
-                          setObstacles((prev) =>
-                            prev.map((ob, i) => (i === selectedIndex ? { ...ob, through: val } : ob))
-                          );
-                        }}
-                        className="rounded border-neutral-700 bg-neutral-800 text-purple-600 focus:ring-0"
-                      />
-                      <span>Walk-behind (Through)</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-            )}
+        {/* Main Workstation Layout */}
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* Floating Tool Island */}
+          <div className="absolute top-4 left-4 z-20 flex flex-col gap-1 p-1.5 rounded-2xl bg-[#181210]/90 border border-amber-900/40 shadow-2xl backdrop-blur-md">
+            <button
+              onClick={() => setActiveTool('select')}
+              title="Select / Move / Resize (V)"
+              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+                activeTool === 'select'
+                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40'
+                  : 'text-neutral-300 hover:bg-white/10'
+              }`}
+            >
+              <MousePointer className="w-4 h-4" />
+              <span className="hidden sm:inline">Select & Resize (V)</span>
+            </button>
+            <button
+              onClick={() => setActiveTool('pan')}
+              title="Pan Canvas (H / Space+Drag)"
+              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+                activeTool === 'pan'
+                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/40'
+                  : 'text-neutral-300 hover:bg-white/10'
+              }`}
+            >
+              <Hand className="w-4 h-4" />
+              <span className="hidden sm:inline">Pan Canvas (H)</span>
+            </button>
+            <div className="h-px bg-neutral-800 my-1" />
+            <button
+              onClick={() => setActiveTool('add-floor')}
+              title="Draw Walkable Floor (F)"
+              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+                activeTool === 'add-floor'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/40'
+                  : 'text-emerald-400 hover:bg-emerald-500/10'
+              }`}
+            >
+              <Square className="w-4 h-4" />
+              <span className="hidden sm:inline">Draw Floor (F)</span>
+            </button>
+            <button
+              onClick={() => setActiveTool('add-solid')}
+              title="Draw Solid Obstacle (O)"
+              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+                activeTool === 'add-solid'
+                  ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40'
+                  : 'text-rose-400 hover:bg-rose-500/10'
+              }`}
+            >
+              <Square className="w-4 h-4" />
+              <span className="hidden sm:inline">Solid Obstacle (O)</span>
+            </button>
+            <button
+              onClick={() => setActiveTool('add-through')}
+              title="Draw Walk-Behind Scenery (T)"
+              className={`p-2.5 rounded-xl text-xs flex items-center gap-2 font-semibold transition-all ${
+                activeTool === 'add-through'
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/40'
+                  : 'text-purple-400 hover:bg-purple-500/10'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span className="hidden sm:inline">Walk-Behind (T)</span>
+            </button>
           </div>
 
-          {/* Center Canvas Area */}
-          <div className="relative flex-1 bg-[#0d0a09] overflow-hidden flex items-center justify-center">
+          {/* Canvas Viewport Area */}
+          <div
+            ref={containerRef}
+            className="relative flex-1 bg-[#090706] overflow-hidden flex items-center justify-center"
+            style={{ cursor: isPanning ? 'grabbing' : hoverCursor }}
+          >
             <canvas
               ref={canvasRef}
-              width={1400}
-              height={850}
-              onMouseDown={onMouseDown}
-              onMouseMove={onMouseMove}
-              onMouseUp={onMouseUp}
-              onWheel={onWheel}
-              className="cursor-crosshair w-full h-full block"
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onWheel={handleWheel}
+              className="block w-full h-full"
             />
 
-            {/* Bottom Floating Canvas Controls */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a1412]/90 border border-amber-900/40 shadow-xl backdrop-blur-md">
+            {/* Bottom Floating Viewport Controls */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#181210]/95 border border-amber-900/40 shadow-2xl backdrop-blur-md">
               <button
-                onClick={() => setZoom((z) => Math.max(0.4, z - 0.15))}
+                onClick={() => setZoom((z) => Math.max(0.35, z - 0.15))}
                 className="p-1.5 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg"
                 title="Zoom Out"
               >
                 <ZoomOut className="w-4 h-4" />
               </button>
-              <span className="text-xs font-mono text-amber-200 min-w-[50px] text-center">
+              <span className="text-xs font-mono font-bold text-amber-200 min-w-[50px] text-center">
                 {Math.round(zoom * 100)}%
               </span>
               <button
-                onClick={() => setZoom((z) => Math.min(2.8, z + 0.15))}
+                onClick={() => setZoom((z) => Math.min(3.2, z + 0.15))}
                 className="p-1.5 text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg"
                 title="Zoom In"
               >
@@ -825,28 +953,408 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
               <div className="h-4 w-px bg-neutral-700 mx-1" />
               <button
                 onClick={() => {
-                  setZoom(0.85);
-                  setPan({ x: 50, y: 30 });
+                  const canvas = canvasRef.current;
+                  if (!canvas) return;
+                  const fitZoom = Math.min(canvas.width / WORLD_WIDTH, canvas.height / WORLD_HEIGHT) * 0.95;
+                  setZoom(fitZoom);
+                  setPan({
+                    x: (canvas.width - WORLD_WIDTH * fitZoom) / 2,
+                    y: (canvas.height - WORLD_HEIGHT * fitZoom) / 2,
+                  });
                 }}
                 className="px-2.5 py-1 text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-lg font-medium"
               >
-                Fit Canvas
+                Fit Campus
               </button>
               <div className="h-4 w-px bg-neutral-700 mx-1" />
               <span className="text-xs text-neutral-400">Snap:</span>
-              {[1, 2, 4, 8].map((s) => (
+              {[1, 2, 4, 8, 16].map((s) => (
                 <button
                   key={s}
                   onClick={() => setSnapGrid(s)}
-                  className={`px-2 py-0.5 text-xs font-mono rounded ${
-                    snapGrid === s ? 'bg-amber-600 text-white' : 'bg-neutral-800 text-neutral-400 hover:text-white'
+                  className={`px-2 py-0.5 text-xs font-mono font-bold rounded ${
+                    snapGrid === s ? 'bg-amber-600 text-white' : 'bg-neutral-800/80 text-neutral-400 hover:text-white'
                   }`}
                 >
                   {s}px
                 </button>
               ))}
+              <div className="h-4 w-px bg-neutral-700 mx-1" />
+              <span className="text-xs font-mono text-neutral-400">
+                X: <strong className="text-amber-200">{cursorWorld.x}</strong> Y:{' '}
+                <strong className="text-amber-200">{cursorWorld.y}</strong>
+              </span>
             </div>
+
+            {/* Floating Sidebar Toggle Button */}
+            <button
+              onClick={() => setIsSidebarOpen((v) => !v)}
+              className="absolute top-4 right-4 z-20 p-2.5 rounded-xl bg-[#181210]/90 border border-amber-900/40 text-neutral-300 hover:text-white shadow-xl backdrop-blur-md"
+              title={isSidebarOpen ? 'Hide Inspector' : 'Show Inspector'}
+            >
+              {isSidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+            </button>
           </div>
+
+          {/* Right Inspector & List Sidebar */}
+          {isSidebarOpen && (
+            <div className="w-80 sm:w-96 bg-[#15100e] border-l border-amber-900/30 flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+              {/* Sidebar Tabs */}
+              <div className="flex border-b border-neutral-800/80 bg-[#120d0b]">
+                <button
+                  onClick={() => setSidebarTab('inspector')}
+                  className={`flex-1 py-2.5 text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+                    sidebarTab === 'inspector'
+                      ? 'border-amber-500 text-amber-300 bg-amber-500/5'
+                      : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" /> Inspector
+                </button>
+                <button
+                  onClick={() => setSidebarTab('list')}
+                  className={`flex-1 py-2.5 text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+                    sidebarTab === 'list'
+                      ? 'border-amber-500 text-amber-300 bg-amber-500/5'
+                      : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" /> Colliders ({floors.length + obstacles.length})
+                </button>
+                <button
+                  onClick={() => setSidebarTab('settings')}
+                  className={`flex-1 py-2.5 text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+                    sidebarTab === 'settings'
+                      ? 'border-amber-500 text-amber-300 bg-amber-500/5'
+                      : 'border-transparent text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  <Eye className="w-3.5 h-3.5" /> Display
+                </button>
+              </div>
+
+              {/* Tab 1: Inspector (Selected Box) */}
+              {sidebarTab === 'inspector' && (
+                <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
+                  {selectedItem ? (
+                    <>
+                      {/* Selection Header */}
+                      <div className="p-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 flex items-center justify-between shadow-lg">
+                        <div>
+                          <div className="text-[10px] font-bold tracking-wider uppercase text-neutral-400">
+                            Selected {selectedType === 'floor' ? 'Walkable Zone' : 'Obstacle Barrier'}
+                          </div>
+                          <div className="text-sm font-extrabold text-amber-200">
+                            {selectedType === 'floor' ? `Floor #${selectedIndex! + 1}` : (selectedItem as ObstacleRect).id}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={duplicateSelected}
+                            title="Duplicate (Ctrl+D)"
+                            className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={deleteSelected}
+                            title="Delete (Delete Key)"
+                            className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/50 rounded-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Numeric Micro-Adjuster Inputs */}
+                      <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-3">
+                        <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                          Coordinates & Dimensions
+                        </span>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {/* X1 */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-mono text-neutral-400">Left (X1)</label>
+                            <input
+                              type="number"
+                              value={selectedItem.x1}
+                              onChange={(e) => {
+                                recordHistory();
+                                const val = Number(e.target.value);
+                                if (selectedType === 'floor') {
+                                  setFloors((prev) => prev.map((f, i) => (i === selectedIndex ? { ...f, x1: val } : f)));
+                                } else {
+                                  setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, x1: val } : ob)));
+                                }
+                              }}
+                              className="px-2.5 py-1.5 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded-lg text-amber-200 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          {/* Y1 */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-mono text-neutral-400">Top (Y1)</label>
+                            <input
+                              type="number"
+                              value={selectedItem.y1}
+                              onChange={(e) => {
+                                recordHistory();
+                                const val = Number(e.target.value);
+                                if (selectedType === 'floor') {
+                                  setFloors((prev) => prev.map((f, i) => (i === selectedIndex ? { ...f, y1: val } : f)));
+                                } else {
+                                  setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, y1: val } : ob)));
+                                }
+                              }}
+                              className="px-2.5 py-1.5 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded-lg text-amber-200 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          {/* X2 */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-mono text-neutral-400">Right (X2)</label>
+                            <input
+                              type="number"
+                              value={selectedItem.x2}
+                              onChange={(e) => {
+                                recordHistory();
+                                const val = Number(e.target.value);
+                                if (selectedType === 'floor') {
+                                  setFloors((prev) => prev.map((f, i) => (i === selectedIndex ? { ...f, x2: val } : f)));
+                                } else {
+                                  setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, x2: val } : ob)));
+                                }
+                              }}
+                              className="px-2.5 py-1.5 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded-lg text-amber-200 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                          {/* Y2 */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-mono text-neutral-400">Bottom (Y2)</label>
+                            <input
+                              type="number"
+                              value={selectedItem.y2}
+                              onChange={(e) => {
+                                recordHistory();
+                                const val = Number(e.target.value);
+                                if (selectedType === 'floor') {
+                                  setFloors((prev) => prev.map((f, i) => (i === selectedIndex ? { ...f, y2: val } : f)));
+                                } else {
+                                  setObstacles((prev) => prev.map((ob, i) => (i === selectedIndex ? { ...ob, y2: val } : ob)));
+                                }
+                              }}
+                              className="px-2.5 py-1.5 text-xs font-mono font-bold bg-black/60 border border-neutral-700 rounded-lg text-amber-200 focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-neutral-800 text-xs text-neutral-400 font-mono">
+                          <span>Width: <strong className="text-white">{selectedItem.x2 - selectedItem.x1}px</strong></span>
+                          <span>Height: <strong className="text-white">{selectedItem.y2 - selectedItem.y1}px</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Obstacle Specific Properties */}
+                      {selectedType === 'obstacle' && (
+                        <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-3">
+                          <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                            Obstacle Properties
+                          </span>
+
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-mono text-neutral-400">Obstacle ID</label>
+                            <input
+                              type="text"
+                              value={(selectedItem as ObstacleRect).id}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setObstacles((prev) =>
+                                  prev.map((ob, i) => (i === selectedIndex ? { ...ob, id: val } : ob))
+                                );
+                              }}
+                              className="px-2.5 py-1.5 text-xs font-mono bg-black/60 border border-neutral-700 rounded-lg text-white focus:outline-none focus:border-amber-500"
+                            />
+                          </div>
+
+                          <label className="flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-neutral-800 cursor-pointer hover:bg-black/60">
+                            <input
+                              type="checkbox"
+                              checked={Boolean((selectedItem as ObstacleRect).through)}
+                              onChange={(e) => {
+                                recordHistory();
+                                const val = e.target.checked;
+                                setObstacles((prev) =>
+                                  prev.map((ob, i) => (i === selectedIndex ? { ...ob, through: val } : ob))
+                                );
+                              }}
+                              className="rounded border-neutral-700 bg-neutral-900 text-purple-600 focus:ring-0 w-4 h-4"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-purple-300">Walk-Behind (Through)</span>
+                              <span className="text-[10px] text-neutral-400">Player can walk behind this scenery</span>
+                            </div>
+                          </label>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-neutral-500">
+                      <MousePointer className="w-8 h-8 mb-2 opacity-40" />
+                      <p className="text-xs font-medium">Click any collider on the map to inspect, resize, or move it.</p>
+                      <p className="text-[11px] text-neutral-600 mt-2">Or use the tool palette on the left to draw a new one.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab 2: Colliders Search & List */}
+              {sidebarTab === 'list' && (
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <div className="p-3 border-b border-neutral-800/80">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                      <input
+                        type="text"
+                        placeholder="Search colliders (e.g. garden, vault)..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-black/60 border border-neutral-800 rounded-xl text-neutral-200 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-2">
+                    {/* Obstacles List */}
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-rose-400 px-1">
+                      Obstacles ({filteredList.obstacles.length})
+                    </div>
+                    {filteredList.obstacles.map((ob) => (
+                      <div
+                        key={ob.id}
+                        onClick={() => {
+                          setSelectedType('obstacle');
+                          setSelectedIndex(ob.index);
+                          setSidebarTab('inspector');
+                          jumpTo((ob.x1 + ob.x2) / 2, (ob.y1 + ob.y2) / 2);
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-mono flex items-center justify-between cursor-pointer transition-all ${
+                          selectedType === 'obstacle' && selectedIndex === ob.index
+                            ? 'bg-rose-500/20 border-rose-500/60 text-rose-200'
+                            : 'bg-neutral-900/60 border-neutral-800/60 hover:bg-neutral-800 text-neutral-300'
+                        }`}
+                      >
+                        <span className="font-semibold truncate">{ob.id}</span>
+                        <span className="text-[10px] text-neutral-500">
+                          {ob.x2 - ob.x1}×{ob.y2 - ob.y1}
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* Floors List */}
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 px-1 mt-2">
+                      Walkable Floors ({filteredList.floors.length})
+                    </div>
+                    {filteredList.floors.map((f) => (
+                      <div
+                        key={f.id}
+                        onClick={() => {
+                          setSelectedType('floor');
+                          setSelectedIndex(f.index);
+                          setSidebarTab('inspector');
+                          jumpTo((f.x1 + f.x2) / 2, (f.y1 + f.y2) / 2);
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-mono flex items-center justify-between cursor-pointer transition-all ${
+                          selectedType === 'floor' && selectedIndex === f.index
+                            ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-200'
+                            : 'bg-neutral-900/60 border-neutral-800/60 hover:bg-neutral-800 text-neutral-300'
+                        }`}
+                      >
+                        <span className="font-semibold">{f.id}</span>
+                        <span className="text-[10px] text-neutral-500">
+                          {f.x2 - f.x1}×{f.y2 - f.y1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Display & Settings */}
+              {sidebarTab === 'settings' && (
+                <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
+                  <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-3">
+                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                      Layer Visibility
+                    </span>
+                    <button
+                      onClick={() => setShowFloors((v) => !v)}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-neutral-800 text-xs font-semibold"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-emerald-500" /> Walkable Floors
+                      </span>
+                      {showFloors ? <Eye className="w-4 h-4 text-emerald-400" /> : <EyeOff className="w-4 h-4 text-neutral-600" />}
+                    </button>
+                    <button
+                      onClick={() => setShowObstacles((v) => !v)}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-neutral-800 text-xs font-semibold"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-rose-500" /> Obstacles & Barriers
+                      </span>
+                      {showObstacles ? <Eye className="w-4 h-4 text-rose-400" /> : <EyeOff className="w-4 h-4 text-neutral-600" />}
+                    </button>
+                    <button
+                      onClick={() => setShowGridLines((v) => !v)}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-neutral-800 text-xs font-semibold"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Grid className="w-3.5 h-3.5 text-neutral-400" /> 32px Grid Lines
+                      </span>
+                      {showGridLines ? <Check className="w-4 h-4 text-amber-400" /> : <span className="text-neutral-600">Off</span>}
+                    </button>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800/80 flex flex-col gap-3">
+                    <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+                      Visual Sliders
+                    </span>
+
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-neutral-400">Map Dimmer</span>
+                        <span className="font-mono text-amber-200">{Math.round(bgDimmer * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="1"
+                        step="0.05"
+                        value={bgDimmer}
+                        onChange={(e) => setBgDimmer(Number(e.target.value))}
+                        className="accent-amber-500"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-neutral-400">Collider Overlay Opacity</span>
+                        <span className="font-mono text-amber-200">{Math.round(overlayOpacity * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="0.9"
+                        step="0.05"
+                        value={overlayOpacity}
+                        onChange={(e) => setOverlayOpacity(Number(e.target.value))}
+                        className="accent-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
