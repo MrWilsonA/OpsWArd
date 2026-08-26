@@ -393,8 +393,8 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
 
     const drawContactShadow = (x: number, y: number, spread: number, strength: number) => {
       context.save();
-      context.translate(x, y + 10);
-      context.scale(1, 0.38);
+      context.translate(x, y + 3);
+      context.scale(1, 0.34);
       const gradient = context.createRadialGradient(0, 0, 1, 0, 0, spread);
       gradient.addColorStop(0, `rgba(26, 13, 8, ${strength})`);
       gradient.addColorStop(0.45, `rgba(26, 13, 8, ${strength * 0.58})`);
@@ -597,7 +597,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         baseline: position.y,
         draw: () => {
           const settle = movingRef.current ? 1.04 : 1;
-          drawContactShadow(position.x, position.y, 19 * settle, 0.5);
+          drawContactShadow(position.x, position.y, 16 * settle, 0.48);
           if (playerSheet?.complete && playerSheet.naturalWidth) {
             drawGradedSprite(playerSheet, playerFrame, playerRow, position.x, position.y, 1);
           }
