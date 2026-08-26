@@ -39,20 +39,6 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
     original = Image.open(source).convert("RGBA")
     arr = np.asarray(original).copy()
 
-    # 1. Clean neutral white / grey noise specks across the entire sheet
-    r_c, g_c, b_c = arr[..., 0], arr[..., 1], arr[..., 2]
-    alpha = arr[..., 3]
-    max_rgb = np.maximum(np.maximum(r_c, g_c), b_c)
-    min_rgb = np.minimum(np.minimum(r_c, g_c), b_c)
-    chroma = max_rgb - min_rgb
-
-    is_white_noise = (alpha > 0) & (min_rgb > 205) & (chroma < 14)
-    eroded = ndimage.binary_erosion(alpha > 20, iterations=2)
-    outer_perimeter = (alpha > 0) & ~eroded
-    is_pale_fringe = outer_perimeter & (min_rgb > 190) & (chroma < 35)
-
-    arr[is_white_noise | is_pale_fringe] = 0
-
     frames: list[Image.Image] = []
     boxes: list[tuple[int, int, int, int] | None] = []
 
@@ -74,7 +60,7 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
             x1_src, x2_src = col_splits[col]
             cell = row_slice[:, x1_src:x2_src].copy()
 
-            # Remove edge leak components
+            # Remove edge leak components from neighbor cells and small 1-2px floating dust
             binary = cell[..., 3] > 20
             labeled, num_features = ndimage.label(binary)
             if num_features > 0:
@@ -90,6 +76,8 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
                         or pts[:, 1].max() >= cell.shape[1] - 2
                     )
                     if touches_edge and size < largest_size * 0.20:
+                        cell[labeled == label_idx] = 0
+                    elif size <= 3:
                         cell[labeled == label_idx] = 0
 
             frame_img = Image.fromarray(cell, "RGBA")
