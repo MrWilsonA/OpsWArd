@@ -14,77 +14,95 @@ TARGET_MAX_H = 50
 OUTLINE = (24, 18, 22, 255)
 
 
+def dynamic_column_split(row_alpha: np.ndarray) -> list[tuple[int, int]]:
+    col_proj = np.sum(row_alpha > 0, axis=0) > 0
+    labeled, num = ndimage.label(col_proj)
+    if num >= 4:
+        sizes = ndimage.sum_labels(col_proj, labeled, range(1, num + 1))
+        large_labels = sorted(range(1, num + 1), key=lambda l: sizes[l - 1], reverse=True)[:4]
+        large_labels.sort(key=lambda l: int(np.argwhere(labeled == l).min()))
+
+        splits = [0]
+        for i in range(3):
+            l_cur = large_labels[i]
+            l_next = large_labels[i + 1]
+            end_cur = int(np.argwhere(labeled == l_cur).max())
+            start_next = int(np.argwhere(labeled == l_next).min())
+            split_x = (end_cur + start_next) // 2
+            splits.append(split_x)
+        splits.append(256)
+        return [(int(splits[i]), int(splits[i + 1])) for i in range(4)]
+    return [(0, 75), (75, 127), (127, 178), (178, 256)]
+
+
 def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
     original = Image.open(source).convert("RGBA")
-    arr = np.asarray(original)
+    arr = np.asarray(original).copy()
 
-    cleaned_frames: list[Image.Image] = []
+    # 1. Clean neutral white / grey noise specks across the entire sheet
+    r_c, g_c, b_c = arr[..., 0], arr[..., 1], arr[..., 2]
+    alpha = arr[..., 3]
+    max_rgb = np.maximum(np.maximum(r_c, g_c), b_c)
+    min_rgb = np.minimum(np.minimum(r_c, g_c), b_c)
+    chroma = max_rgb - min_rgb
+
+    is_white_noise = (alpha > 0) & (min_rgb > 205) & (chroma < 14)
+    eroded = ndimage.binary_erosion(alpha > 20, iterations=2)
+    outer_perimeter = (alpha > 0) & ~eroded
+    is_pale_fringe = outer_perimeter & (min_rgb > 190) & (chroma < 35)
+
+    arr[is_white_noise | is_pale_fringe] = 0
+
+    frames: list[Image.Image] = []
+    boxes: list[tuple[int, int, int, int] | None] = []
 
     for row in range(4):
-        for column in range(4):
-            cell = arr[row * CELL : (row + 1) * CELL, column * CELL : (column + 1) * CELL].copy()
-            alpha = cell[..., 3]
+        # Row 3 (facing up) has round head overflow from row 2
+        overflow_top = 12 if row == 3 else 0
+        y1_src = max(0, row * CELL - overflow_top)
+        y2_src = (row + 1) * CELL
 
-            # 1. Remove disconnected leak components from adjacent cells
-            binary = alpha > 20
+        row_slice = arr[y1_src:y2_src, :].copy()
+
+        # If row 2, clear the bottom 10px where row 3 head might leak
+        if row == 2 and row_slice.shape[0] == CELL:
+            row_slice[54:, :] = 0
+
+        col_splits = dynamic_column_split(row_slice[..., 3])
+
+        for col in range(4):
+            x1_src, x2_src = col_splits[col]
+            cell = row_slice[:, x1_src:x2_src].copy()
+
+            # Remove edge leak components
+            binary = cell[..., 3] > 20
             labeled, num_features = ndimage.label(binary)
             if num_features > 0:
                 sizes = ndimage.sum_labels(binary, labeled, range(1, num_features + 1))
-                main_label = int(np.argmax(sizes)) + 1
-                largest_size = float(sizes[main_label - 1])
+                largest_size = float(max(sizes))
 
-                keep_mask = np.zeros_like(binary)
                 for label_idx, size in enumerate(sizes, 1):
                     pts = np.argwhere(labeled == label_idx)
-                    touches_top = pts[:, 0].min() == 0
-                    touches_bottom = pts[:, 0].max() == CELL - 1
-                    touches_left = pts[:, 1].min() == 0
-                    touches_right = pts[:, 1].max() == CELL - 1
+                    touches_edge = (
+                        pts[:, 0].min() <= 1
+                        or pts[:, 0].max() >= cell.shape[0] - 2
+                        or pts[:, 1].min() <= 1
+                        or pts[:, 1].max() >= cell.shape[1] - 2
+                    )
+                    if touches_edge and size < largest_size * 0.20:
+                        cell[labeled == label_idx] = 0
 
-                    if label_idx == main_label:
-                        keep_mask |= (labeled == label_idx)
-                    elif (touches_top or touches_bottom or touches_left or touches_right) and size < largest_size * 0.35:
-                        continue
-                    elif size >= 4:
-                        keep_mask |= (labeled == label_idx)
+            frame_img = Image.fromarray(cell, "RGBA")
+            frames.append(frame_img)
 
-                cell[~keep_mask] = 0
-
-            # 2. Remove white / pale edge fringe pixels on the outer perimeter
-            eroded = ndimage.binary_erosion(cell[..., 3] > 0)
-            perimeter = (cell[..., 3] > 0) & ~eroded
-
-            r_c, g_c, b_c = cell[..., 0], cell[..., 1], cell[..., 2]
-            max_c = np.maximum(np.maximum(r_c, g_c), b_c)
-            min_c = np.minimum(np.minimum(r_c, g_c), b_c)
-            sat = max_c - min_c
-
-            is_pale_fringe = perimeter & (max_c > 195) & (sat < 40)
-            is_white_fringe = perimeter & (r_c > 210) & (g_c > 200) & (b_c > 190)
-
-            cell[is_pale_fringe | is_white_fringe] = 0
-
-            # Secondary pass for isolated residue pixels
-            binary2 = cell[..., 3] > 20
-            labeled2, num2 = ndimage.label(binary2)
-            if num2 > 0:
-                sizes2 = ndimage.sum_labels(binary2, labeled2, range(1, num2 + 1))
-                keep_mask2 = np.isin(labeled2, [i for i, s in enumerate(sizes2, 1) if s >= 4])
-                cell[~keep_mask2] = 0
-
-            cleaned_frames.append(Image.fromarray(cell, "RGBA"))
-
-    # Extract tight bounding boxes across all frames
-    boxes: list[tuple[int, int, int, int] | None] = []
-    for frame in cleaned_frames:
-        f_alpha = np.asarray(frame.getchannel("A"))
-        pts = np.argwhere(f_alpha > 0)
-        if pts.size > 0:
-            y1, x1 = pts.min(axis=0)
-            y2, x2 = pts.max(axis=0) + 1
-            boxes.append((int(x1), int(y1), int(x2), int(y2)))
-        else:
-            boxes.append(None)
+            f_alpha = np.asarray(frame_img.getchannel("A"))
+            pts = np.argwhere(f_alpha > 0)
+            if pts.size > 0:
+                y1, x1 = pts.min(axis=0)
+                y2, x2 = pts.max(axis=0) + 1
+                boxes.append((int(x1), int(y1), int(x2), int(y2)))
+            else:
+                boxes.append(None)
 
     widths = [b[2] - b[0] for b in boxes if b]
     heights = [b[3] - b[1] for b in boxes if b]
@@ -92,7 +110,7 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
 
     output = Image.new("RGBA", (SHEET, SHEET), (0, 0, 0, 0))
 
-    for idx, (frame, box) in enumerate(zip(cleaned_frames, boxes)):
+    for idx, (frame, box) in enumerate(zip(frames, boxes)):
         if box is None:
             continue
         cropped = frame.crop(box)
@@ -114,18 +132,17 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
         x = round(CELL / 2 - x_center)
         y = baseline - cropped.height
 
-        # Ensure frame fits completely inside 64x64 with safe padding (no bleed)
         x = max(3, min(CELL - 3 - cropped.width, x))
         y = max(3, min(CELL - 3 - cropped.height, y))
 
         cell_img = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
         cell_img.alpha_composite(cropped, (x, y))
 
-        # Add crisp pixel outline
-        a_channel = cell_img.getchannel("A")
-        expanded = a_channel.filter(ImageFilter.MaxFilter(3))
+        # Add clean crisp dark outline
+        a_chan = cell_img.getchannel("A")
+        expanded = a_chan.filter(ImageFilter.MaxFilter(3))
         outline_a = np.maximum(
-            np.asarray(expanded, dtype=np.int16) - np.asarray(a_channel, dtype=np.int16),
+            np.asarray(expanded, dtype=np.int16) - np.asarray(a_chan, dtype=np.int16),
             0,
         ).astype(np.uint8)
         outline_img = Image.new("RGBA", (CELL, CELL), OUTLINE)
