@@ -13,13 +13,13 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "public" / "game-assets"
 SOURCE = ASSETS / "opsward-outdoor-v2-source.png"
-BASE = ASSETS / "opsward-outdoor-v2.png"
+BASE = ASSETS / "opsward-outdoor-v3.png"
 FRAME_DIR = ASSETS / "outdoor-loop-frames"
+TILE_DIR = ASSETS / "outdoor-hires-tiles"
 GIF = ASSETS / "opsward-outdoor-loop.gif"
 PREVIEW = ASSETS / "opsward-outdoor-loop-preview.png"
 
 WIDTH, HEIGHT = 1536, 1024
-LOGICAL_WIDTH, LOGICAL_HEIGHT = WIDTH // 2, HEIGHT // 2
 FRAME_COUNT = 10
 
 
@@ -32,17 +32,24 @@ def roi_mask(boxes: list[tuple[int, int, int, int]]) -> np.ndarray:
 
 def normalize_source() -> Image.Image:
     source = Image.open(SOURCE).convert("RGB")
-    source = source.resize((LOGICAL_WIDTH, LOGICAL_HEIGHT), Image.Resampling.NEAREST)
-    # A compact palette and zero dithering remove generated micro-noise while
-    # retaining readable tile clusters and hard square pixels.
-    source = source.quantize(colors=144, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB")
-    return source.resize((WIDTH, HEIGHT), Image.Resampling.NEAREST)
+    source = source.resize((WIDTH, HEIGHT), Image.Resampling.NEAREST)
+    # Keep the generator's full 1536x1024 logical detail. Palette reduction
+    # removes blended edge colours without halving the map resolution.
+    return source.quantize(colors=240, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB")
 
 
 def main() -> None:
     FRAME_DIR.mkdir(parents=True, exist_ok=True)
+    TILE_DIR.mkdir(parents=True, exist_ok=True)
     base = normalize_source()
     base.save(BASE, optimize=True)
+    # Four streamable quadrants form a 9216x6144 physical map. The renderer
+    # draws them back at logical size with smoothing disabled.
+    for tile_y in range(2):
+        for tile_x in range(2):
+            tile = base.crop((tile_x * 768, tile_y * 512, (tile_x + 1) * 768, (tile_y + 1) * 512))
+            tile = tile.resize((4608, 3072), Image.Resampling.NEAREST)
+            tile.save(TILE_DIR / f"outdoor-{tile_x}-{tile_y}.png", optimize=True)
     pixels = np.asarray(base).copy()
     red, green, blue = pixels[..., 0], pixels[..., 1], pixels[..., 2]
 

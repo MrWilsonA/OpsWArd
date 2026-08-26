@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CharacterProfile, RESPONDER_ROSTER } from '@/lib/characters';
 import { TacticalPosition } from '@/types/opsward';
 import campusLayout from '@/lib/campus-layout.json';
+import { EXTRA_MAP_COLLIDERS, MAP_BACKGROUNDS, WorldMapId } from '@/lib/world-maps';
 import { Clock3, Coffee, Gamepad2, Headphones, Layers, Leaf, MapPin, Radio, Sparkles, Users, Volume2, VolumeX } from 'lucide-react';
 import { ColliderEditorModal } from './ColliderEditorModal';
 
@@ -16,10 +17,9 @@ interface TacticalCanvasRoomProps {
 }
 
 type Direction = 'down' | 'left' | 'right' | 'up';
-type MapId = 'indoor' | 'outdoor';
 type Rect = { x1: number; y1: number; x2: number; y2: number };
 type Room = Rect & { name: string };
-type Interactable = { id: string; x: number; y: number; radius: number; label: string; message: string };
+type Interactable = { id: string; x: number; y: number; radius: number; label: string; message: string; targetMap?: WorldMapId };
 type Occluder = { id: string; x: number; y: number; width: number; height: number; baseline: number; through: boolean };
 type NpcSpot = { id: string; x: number; y: number };
 
@@ -32,9 +32,9 @@ const SPAWN = campusLayout.spawn;
 
 // The avatar collides with an ellipse under its feet rather than a circle around
 // its middle, which is what a top-down room actually reads like.
-const FOOT_RADIUS_X = 9;
-const FOOT_RADIUS_Y = 6;
-const FOOT_OFFSET_Y = 4;
+const FOOT_RADIUS_X = 6;
+const FOOT_RADIUS_Y = 4;
+const FOOT_OFFSET_Y = 3;
 const FOOT_PROBES: [number, number][] = [
   [0, 0], [1, 0], [-1, 0], [0, 1], [0, -1],
   [0.71, 0.71], [-0.71, 0.71], [0.71, -0.71], [-0.71, -0.71],
@@ -44,7 +44,8 @@ const NPC_RADIUS_X = 13;
 const NPC_RADIUS_Y = 9;
 
 const SPRITE_SIZE = 64;
-const SPRITE_ANCHOR_Y = 52;
+const SPRITE_DRAW_SIZE = 44;
+const SPRITE_ANCHOR_Y = 36;
 const WALK_SPEED = 148;
 const NAV_GRID = 8;
 const CAMPUS_FRAME_COUNT = 10;
@@ -63,28 +64,56 @@ const INDOOR_NPCS: NpcSpot[] = [
   { id: 'nuying', x: 880, y: 830 },
 ];
 
-// Every responder owns one authored outdoor station on an open path or plaza.
-// The currently controlled responder is filtered out at render time, so a
-// character can never appear twice after a roster switch.
 const OUTDOOR_NPC_SPOTS: NpcSpot[] = [
-  { id: 'eric', x: 748, y: 430 }, { id: 'james', x: 628, y: 410 },
-  { id: 'miria', x: 856, y: 410 }, { id: 'nuying', x: 538, y: 478 },
-  { id: 'george', x: 956, y: 478 }, { id: 'tony', x: 612, y: 510 },
-  { id: 'santi', x: 878, y: 510 }, { id: 'rose', x: 650, y: 588 },
-  { id: 'rinda', x: 840, y: 588 }, { id: 'yanto', x: 742, y: 648 },
-  { id: 'theresa', x: 410, y: 395 }, { id: 'jesfer_normal', x: 1000, y: 365 },
-  { id: 'jesfer_clown', x: 490, y: 610 }, { id: 'alex', x: 1012, y: 618 },
-  { id: 'andri', x: 310, y: 690 }, { id: 'budi', x: 1190, y: 642 },
-  { id: 'christ', x: 220, y: 670 }, { id: 'dzuky', x: 980, y: 738 },
-  { id: 'enjidiren', x: 550, y: 748 }, { id: 'fanisa', x: 948, y: 752 },
-  { id: 'helina', x: 620, y: 790 }, { id: 'lemma', x: 868, y: 790 },
-  { id: 'melinda', x: 780, y: 760 }, { id: 'olimar', x: 1370, y: 850 },
-  { id: 'wilson_model', x: 410, y: 560 }, { id: 'yuki', x: 1180, y: 600 },
+  { id: 'alex', x: 620, y: 395 },
+  { id: 'rose', x: 885, y: 402 },
+  { id: 'andri', x: 585, y: 535 },
+  { id: 'melinda', x: 975, y: 525 },
+  { id: 'yuki', x: 755, y: 705 },
 ];
+
+const GREENHOUSE_NPCS: NpcSpot[] = [
+  { id: 'fanisa', x: 755, y: 330 }, { id: 'lemma', x: 1110, y: 565 }, { id: 'helina', x: 470, y: 685 },
+];
+const RELAY_NPCS: NpcSpot[] = [
+  { id: 'rinda', x: 755, y: 300 }, { id: 'tony', x: 1000, y: 690 }, { id: 'santi', x: 710, y: 820 },
+];
+const WORKSHOP_NPCS: NpcSpot[] = [
+  { id: 'christ', x: 500, y: 310 }, { id: 'budi', x: 1015, y: 610 }, { id: 'dzuky', x: 760, y: 880 },
+];
+const LODGE_NPCS: NpcSpot[] = [
+  { id: 'eric', x: 760, y: 405 }, { id: 'yanto', x: 510, y: 580 }, { id: 'jesfer_normal', x: 1020, y: 580 },
+];
+const COTTAGE_NPCS: NpcSpot[] = [
+  { id: 'jesfer_clown', x: 745, y: 380 }, { id: 'olimar', x: 480, y: 700 }, { id: 'wilson_model', x: 925, y: 760 },
+];
+
+const MAP_NPCS: Record<WorldMapId, NpcSpot[]> = {
+  indoor: INDOOR_NPCS,
+  outdoor: OUTDOOR_NPC_SPOTS,
+  greenhouse: GREENHOUSE_NPCS,
+  relay: RELAY_NPCS,
+  workshop: WORKSHOP_NPCS,
+  lodge: LODGE_NPCS,
+  cottage: COTTAGE_NPCS,
+};
 
 const OUTDOOR_SPAWN = { x: 748, y: 342 };
 const INDOOR_EXIT = { x: 752, y: 958, radius: 55 };
 const OUTDOOR_HALL_DOOR = { x: 748, y: 312, radius: 74 };
+const INTERIOR_EXIT = { x: 768, y: 930, radius: 78 };
+
+const MAP_SPAWNS: Record<WorldMapId, TacticalPosition> = {
+  indoor: { x: SPAWN.x, y: SPAWN.y },
+  outdoor: OUTDOOR_SPAWN,
+  greenhouse: { x: 768, y: 880 }, relay: { x: 768, y: 880 },
+  workshop: { x: 768, y: 880 }, lodge: { x: 768, y: 900 }, cottage: { x: 768, y: 885 },
+};
+
+const OUTDOOR_RETURN_SPAWNS: Partial<Record<WorldMapId, TacticalPosition>> = {
+  indoor: { x: 748, y: 342 }, lodge: { x: 250, y: 360 }, relay: { x: 1270, y: 330 },
+  cottage: { x: 1220, y: 585 }, workshop: { x: 590, y: 900 }, greenhouse: { x: 1168, y: 948 },
+};
 
 const OUTDOOR_ROOMS: Room[] = [
   { name: 'Incident Command Hall', x1: 545, y1: 40, x2: 970, y2: 340 },
@@ -95,25 +124,6 @@ const OUTDOOR_ROOMS: Room[] = [
   { name: 'Tool Workshop', x1: 250, y1: 680, x2: 610, y2: 990 },
   { name: 'Oakheart Greenhouse', x1: 970, y1: 650, x2: 1380, y2: 990 },
   { name: 'Command Plaza', x1: 520, y1: 335, x2: 990, y2: 720 },
-];
-
-const OUTDOOR_RECT_BLOCKERS: Rect[] = [
-  { x1: 0, y1: 0, x2: 1536, y2: 42 }, { x1: 0, y1: 982, x2: 1536, y2: 1024 },
-  { x1: 0, y1: 0, x2: 46, y2: 1024 }, { x1: 1490, y1: 0, x2: 1536, y2: 1024 },
-  { x1: 86, y1: 110, x2: 390, y2: 330 },
-  { x1: 558, y1: 52, x2: 956, y2: 286 },
-  { x1: 1122, y1: 86, x2: 1414, y2: 302 },
-  { x1: 1048, y1: 352, x2: 1402, y2: 552 },
-  { x1: 96, y1: 458, x2: 362, y2: 654 },
-  { x1: 272, y1: 714, x2: 566, y2: 944 },
-  { x1: 1018, y1: 682, x2: 1320, y2: 918 },
-  { x1: 130, y1: 716, x2: 278, y2: 926 },
-];
-
-const OUTDOOR_ELLIPSE_BLOCKERS = [
-  { x: 757, y: 904, rx: 205, ry: 105 },
-  { x: 430, y: 170, rx: 68, ry: 220 },
-  { x: 112, y: 720, rx: 85, ry: 250 },
 ];
 
 const ROOMS: Room[] = [
@@ -138,12 +148,42 @@ const INTERACTABLES: Interactable[] = [
 ];
 
 const OUTDOOR_INTERACTABLES: Interactable[] = [
-  { id: 'enter-hall', x: OUTDOOR_HALL_DOOR.x, y: OUTDOOR_HALL_DOOR.y, radius: OUTDOOR_HALL_DOOR.radius, label: 'Enter Incident Command Hall', message: 'Entering the indoor operations floor.' },
-  { id: 'greenhouse', x: 1168, y: 932, radius: 82, label: 'Inspect greenhouse', message: 'The greenhouse supports botanical monitoring and remains a decorative campus landmark.' },
-  { id: 'relay', x: 1274, y: 320, radius: 72, label: 'Check network relay', message: 'Outdoor relay: telemetry uplink stable.' },
-  { id: 'workshop', x: 420, y: 950, radius: 74, label: 'Visit tool workshop', message: 'Workshop interior is reserved for the next expansion.' },
-  { id: 'lodge', x: 250, y: 340, radius: 74, label: 'Visit creekside lodge', message: 'Lodge interior is reserved for the next expansion.' },
+  { id: 'enter-hall', x: OUTDOOR_HALL_DOOR.x, y: OUTDOOR_HALL_DOOR.y, radius: OUTDOOR_HALL_DOOR.radius, label: 'Enter Incident Command Hall', message: 'Entering the indoor operations floor.', targetMap: 'indoor' },
+  { id: 'greenhouse', x: 1168, y: 948, radius: 88, label: 'Enter Oakheart Greenhouse', message: 'Opening environmental telemetry greenhouse.', targetMap: 'greenhouse' },
+  { id: 'relay', x: 1274, y: 330, radius: 82, label: 'Enter SFU Network Relay', message: 'Opening spatial-media relay lab.', targetMap: 'relay' },
+  { id: 'workshop', x: 590, y: 900, radius: 88, label: 'Enter Saga Workshop', message: 'Opening playbook orchestration workshop.', targetMap: 'workshop' },
+  { id: 'lodge', x: 250, y: 360, radius: 82, label: 'Enter Raft Audit Lodge', message: 'Opening consensus and audit lodge.', targetMap: 'lodge' },
+  { id: 'cottage', x: 1220, y: 585, radius: 82, label: 'Enter DLQ Replay Cottage', message: 'Opening telemetry and replay cottage.', targetMap: 'cottage' },
 ];
+
+const INTERIOR_INTERACTABLES: Record<Exclude<WorldMapId, 'indoor' | 'outdoor'>, Interactable[]> = {
+  greenhouse: [
+    { id: 'exit-greenhouse', ...INTERIOR_EXIT, label: 'Exit greenhouse', message: 'Returning outside.', targetMap: 'outdoor' },
+    { id: 'climate', x: 770, y: 260, radius: 82, label: 'Inspect climate telemetry', message: 'Humidity, irrigation pressure, and growth telemetry are nominal.' },
+  ],
+  relay: [
+    { id: 'exit-relay', ...INTERIOR_EXIT, label: 'Exit relay lab', message: 'Returning outside.', targetMap: 'outdoor' },
+    { id: 'sfu-zone', x: 975, y: 465, radius: 105, label: 'Test spatial audio mesh', message: 'SFU attenuation test running across four directional speakers.' },
+  ],
+  workshop: [
+    { id: 'exit-workshop', ...INTERIOR_EXIT, label: 'Exit workshop', message: 'Returning outside.', targetMap: 'outdoor' },
+    { id: 'workflow', x: 1020, y: 470, radius: 110, label: 'Inspect Saga pipeline', message: 'Drain traffic → restart cluster → health check; compensation path armed.' },
+  ],
+  lodge: [
+    { id: 'exit-lodge', ...INTERIOR_EXIT, label: 'Exit audit lodge', message: 'Returning outside.', targetMap: 'outdoor' },
+    { id: 'quorum', x: 770, y: 555, radius: 120, label: 'Inspect Raft quorum', message: 'Three nodes online · leader elected · audit log committed.' },
+  ],
+  cottage: [
+    { id: 'exit-cottage', ...INTERIOR_EXIT, label: 'Exit replay cottage', message: 'Returning outside.', targetMap: 'outdoor' },
+    { id: 'dlq', x: 1360, y: 310, radius: 94, label: 'Inspect dead-letter queue', message: 'Four malformed alerts isolated; manual replay is ready.' },
+  ],
+};
+
+const MAP_TITLES: Record<WorldMapId, string> = {
+  indoor: 'Oakheart Operations Hall', outdoor: 'Oakheart Outdoor Campus',
+  greenhouse: 'Oakheart Greenhouse', relay: 'SFU Network Relay', workshop: 'Saga Playbook Workshop',
+  lodge: 'Raft Consensus Lodge', cottage: 'Telemetry & DLQ Cottage',
+};
 
 const directionRow: Record<Direction, number> = { down: 0, left: 1, right: 2, up: 3 };
 const clamp = (value: number, minimum: number, maximum: number) => Math.max(minimum, Math.min(maximum, value));
@@ -163,23 +203,32 @@ const isWalkable = (x: number, y: number) => {
   return collisionMask[py * WORLD_WIDTH + px] === 1;
 };
 
-const isOutdoorBlocked = (x: number, y: number) => {
+const pointInsideCollider = (x: number, y: number, collider: { x1: number; y1: number; x2: number; y2: number; shape?: string }) => {
+  if (collider.shape !== 'ellipse') return inside(x, y, collider);
+  const centerX = (collider.x1 + collider.x2) / 2;
+  const centerY = (collider.y1 + collider.y2) / 2;
+  const radiusX = Math.max(1, (collider.x2 - collider.x1) / 2);
+  const radiusY = Math.max(1, (collider.y2 - collider.y1) / 2);
+  const nx = (x - centerX) / radiusX;
+  const ny = (y - centerY) / radiusY;
+  return nx * nx + ny * ny <= 1;
+};
+
+const isExtraMapBlocked = (map: Exclude<WorldMapId, 'indoor'>, x: number, y: number) => {
+  const data = EXTRA_MAP_COLLIDERS[map];
+  if (!data) return true;
   const footY = y + FOOT_OFFSET_Y;
   for (const [dx, dy] of FOOT_PROBES) {
     const probeX = x + dx * FOOT_RADIUS_X;
     const probeY = footY + dy * FOOT_RADIUS_Y;
-    if (OUTDOOR_RECT_BLOCKERS.some((blocker) => inside(probeX, probeY, blocker))) return true;
-    if (OUTDOOR_ELLIPSE_BLOCKERS.some((blocker) => {
-      const nx = (probeX - blocker.x) / blocker.rx;
-      const ny = (probeY - blocker.y) / blocker.ry;
-      return nx * nx + ny * ny <= 1;
-    })) return true;
+    if (!data.floors.some((floor) => pointInsideCollider(probeX, probeY, floor))) return true;
+    if (data.obstacles.some((obstacle) => pointInsideCollider(probeX, probeY, obstacle))) return true;
   }
   return false;
 };
 
-const isBlocked = (map: MapId, x: number, y: number) => {
-  if (map === 'outdoor') return isOutdoorBlocked(x, y);
+const isBlocked = (map: WorldMapId, x: number, y: number) => {
+  if (map !== 'indoor') return isExtraMapBlocked(map, x, y);
   const footY = y + FOOT_OFFSET_Y;
   for (const [dx, dy] of FOOT_PROBES) {
     if (!isWalkable(x + dx * FOOT_RADIUS_X, footY + dy * FOOT_RADIUS_Y)) return true;
@@ -190,7 +239,7 @@ const isBlocked = (map: MapId, x: number, y: number) => {
 const gridKey = (x: number, y: number) => `${x},${y}`;
 const gridPoint = (x: number, y: number): TacticalPosition => ({ x: x * NAV_GRID, y: y * NAV_GRID });
 
-const nearestOpenGridPoint = (map: MapId, point: TacticalPosition) => {
+const nearestOpenGridPoint = (map: WorldMapId, point: TacticalPosition) => {
   const centerX = Math.round(point.x / NAV_GRID);
   const centerY = Math.round(point.y / NAV_GRID);
   for (let radius = 0; radius <= 14; radius += 1) {
@@ -224,7 +273,7 @@ const simplifyPath = (points: TacticalPosition[]) => {
   return result;
 };
 
-const findPath = (map: MapId, start: TacticalPosition, goal: TacticalPosition) => {
+const findPath = (map: WorldMapId, start: TacticalPosition, goal: TacticalPosition) => {
   if (isBlocked(map, goal.x, goal.y)) return [];
   const startGrid = nearestOpenGridPoint(map, start);
   const goalGrid = nearestOpenGridPoint(map, goal);
@@ -330,10 +379,12 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const assetsRef = useRef<{
     interiors: HTMLImageElement[];
-    outdoors: HTMLImageElement[];
+    mapImages: Partial<Record<WorldMapId, HTMLImageElement>>;
+    outdoorTiles: HTMLImageElement[];
+    overlays: Partial<Record<WorldMapId, HTMLImageElement[]>>;
     sprites: Record<string, HTMLImageElement>;
     occluderMask: HTMLImageElement | null;
-  }>({ interiors: [], outdoors: [], sprites: {}, occluderMask: null });
+  }>({ interiors: [], mapImages: {}, outdoorTiles: [], overlays: {}, sprites: {}, occluderMask: null });
   const occluderLayerRef = useRef<HTMLCanvasElement | null>(null);
   const occluderFrameRef = useRef(-1);
   const spriteBufferRef = useRef<HTMLCanvasElement | null>(null);
@@ -349,9 +400,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const nearbyInteractableRef = useRef<Interactable | null>(null);
   const interactionBurstRef = useRef<{ x: number; y: number; until: number } | null>(null);
   const noteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const activeMapRef = useRef<MapId>('indoor');
+  const activeMapRef = useRef<WorldMapId>('indoor');
   const [assetsReady, setAssetsReady] = useState(false);
-  const [activeMap, setActiveMap] = useState<MapId>('indoor');
+  const [activeMap, setActiveMap] = useState<WorldMapId>('indoor');
   const [playerPos, setPlayerPos] = useState<TacticalPosition>(positionRef.current);
   const [activeRoom, setActiveRoom] = useState('Arrival Hall');
   const [proximityRadius, setProximityRadius] = useState(170);
@@ -361,10 +412,13 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const [interactionNote, setInteractionNote] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
-  const changeMap = useCallback((nextMap: MapId) => {
+  const changeMap = useCallback((nextMap: WorldMapId) => {
+    const previousMap = activeMapRef.current;
     activeMapRef.current = nextMap;
     setActiveMap(nextMap);
-    positionRef.current = nextMap === 'outdoor' ? { ...OUTDOOR_SPAWN } : { x: SPAWN.x, y: SPAWN.y };
+    positionRef.current = nextMap === 'outdoor' && previousMap !== 'outdoor'
+      ? { ...(OUTDOOR_RETURN_SPAWNS[previousMap] ?? OUTDOOR_SPAWN) }
+      : { ...MAP_SPAWNS[nextMap] };
     cameraRef.current = {
       x: clamp(positionRef.current.x - VIEW_WIDTH / 2, 0, WORLD_WIDTH - VIEW_WIDTH),
       y: clamp(positionRef.current.y - VIEW_HEIGHT / 2, 0, WORLD_HEIGHT - VIEW_HEIGHT),
@@ -374,7 +428,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     clickTargetRef.current = null;
     nearbyInteractableRef.current = null;
     setNearbyInteractable(null);
-    setInteractionNote(nextMap === 'outdoor' ? 'Outdoor campus loaded.' : 'Incident Command Hall loaded.');
+    setInteractionNote(`${MAP_TITLES[nextMap]} loaded.`);
   }, []);
 
   useEffect(() => {
@@ -386,12 +440,29 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
           .then((image) => { assetsRef.current.interiors[index] = image; }),
       );
     }
-    for (let index = 0; index < OUTDOOR_FRAME_COUNT; index += 1) {
-      pending.push(
-        loadImage(`/game-assets/outdoor-loop-frames/outdoor-${String(index).padStart(2, '0')}.png`)
-          .then((image) => { assetsRef.current.outdoors[index] = image; }),
-      );
+    for (let tileY = 0; tileY < 2; tileY += 1) {
+      for (let tileX = 0; tileX < 2; tileX += 1) {
+        const tileIndex = tileY * 2 + tileX;
+        pending.push(
+          loadImage(`/game-assets/outdoor-hires-tiles/outdoor-${tileX}-${tileY}.png`)
+            .then((image) => { assetsRef.current.outdoorTiles[tileIndex] = image; }),
+        );
+      }
     }
+    (['greenhouse', 'relay', 'workshop', 'lodge', 'cottage'] as WorldMapId[]).forEach((mapId) => {
+      pending.push(
+        loadImage(MAP_BACKGROUNDS[mapId]).then((image) => { assetsRef.current.mapImages[mapId] = image; }),
+      );
+    });
+    (['outdoor', 'greenhouse', 'relay', 'workshop', 'lodge', 'cottage'] as WorldMapId[]).forEach((mapId) => {
+      assetsRef.current.overlays[mapId] = [];
+      for (let index = 0; index < OUTDOOR_FRAME_COUNT; index += 1) {
+        pending.push(
+          loadImage(`/game-assets/map-animation-overlays/${mapId}/${String(index).padStart(2, '0')}.png`)
+            .then((image) => { assetsRef.current.overlays[mapId]![index] = image; }),
+        );
+      }
+    });
     pending.push(loadImage('/game-assets/campus-occluder.png').then((image) => {
       assetsRef.current.occluderMask = image;
     }));
@@ -420,12 +491,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       if (key === 'e' && nearbyInteractableRef.current) {
         event.preventDefault();
         const item = nearbyInteractableRef.current;
-        if (item.id === 'exit-campus') {
-          changeMap('outdoor');
-          return;
-        }
-        if (item.id === 'enter-hall') {
-          changeMap('indoor');
+        if (item.targetMap) {
+          setInteractionNote(item.message);
+          changeMap(item.targetMap);
           return;
         }
         setInteractionNote(item.message);
@@ -445,7 +513,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   }, [changeMap]);
 
   useEffect(() => {
-    const mapNpcs = (activeMap === 'outdoor' ? OUTDOOR_NPC_SPOTS : INDOOR_NPCS)
+    const mapNpcs = MAP_NPCS[activeMap]
       .filter((responder) => responder.id !== selectedAvatar.id);
     const nearby = mapNpcs.map((responder) => {
       const char = RESPONDER_ROSTER.find((candidate) => candidate.id === responder.id);
@@ -556,7 +624,11 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
 
       context.save();
       context.globalAlpha = alpha;
-      context.drawImage(buffer, Math.round(x - SPRITE_SIZE / 2), Math.round(y - SPRITE_ANCHOR_Y));
+      context.drawImage(
+        buffer,
+        Math.round(x - SPRITE_DRAW_SIZE / 2), Math.round(y - SPRITE_ANCHOR_Y),
+        SPRITE_DRAW_SIZE, SPRITE_DRAW_SIZE,
+      );
       context.restore();
     };
 
@@ -564,13 +636,13 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       const sheet = assetsRef.current.sprites[npc.id];
       if (!sheet?.complete || !sheet.naturalWidth) return;
       const bob = Math.round(Math.sin(now / 620 + index) * 1);
-      drawContactShadow(npc.x, npc.y, 18, 0.44);
+      drawContactShadow(npc.x, npc.y, 12, 0.4);
       drawGradedSprite(sheet, 0, 0, npc.x, npc.y + bob, 1);
     };
 
     const render = (now: number) => {
       const currentMap = activeMapRef.current;
-      const currentNpcs = (currentMap === 'outdoor' ? OUTDOOR_NPC_SPOTS : INDOOR_NPCS)
+      const currentNpcs = MAP_NPCS[currentMap]
         .filter((npc) => npc.id !== selectedAvatar.id);
       const delta = Math.min(0.04, (now - previousTime) / 1000);
       previousTime = now;
@@ -630,13 +702,15 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       if (hudAccumulator > 0.1) {
         hudAccumulator = 0;
         setPlayerPos({ ...positionRef.current });
-        setActiveRoom(currentMap === 'outdoor' ? getOutdoorRoomName(positionRef.current) : getRoomName(positionRef.current));
-        const mapInteractables = currentMap === 'outdoor'
+        setActiveRoom(currentMap === 'indoor'
+          ? getRoomName(positionRef.current)
+          : currentMap === 'outdoor' ? getOutdoorRoomName(positionRef.current) : MAP_TITLES[currentMap]);
+        const mapInteractables: Interactable[] = currentMap === 'outdoor'
           ? OUTDOOR_INTERACTABLES
-          : [...INTERACTABLES, {
+          : currentMap === 'indoor' ? [...INTERACTABLES, {
             id: 'exit-campus', x: INDOOR_EXIT.x, y: INDOOR_EXIT.y, radius: INDOOR_EXIT.radius,
-            label: 'Exit to outdoor campus', message: 'Leaving the command hall.',
-          }];
+            label: 'Exit to outdoor campus', message: 'Leaving the command hall.', targetMap: 'outdoor' as WorldMapId,
+          }] : INTERIOR_INTERACTABLES[currentMap];
         const nearest = mapInteractables
           .map((item) => ({ item, distance: Math.hypot(positionRef.current.x - item.x, positionRef.current.y - item.y) }))
           .filter(({ item, distance }) => distance <= item.radius)
@@ -656,12 +730,23 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       context.translate(-cameraX, -cameraY);
       const campusFrame = Math.floor(now / CAMPUS_FRAME_DURATION) % CAMPUS_FRAME_COUNT;
       const outdoorFrame = Math.floor(now / OUTDOOR_FRAME_DURATION) % OUTDOOR_FRAME_COUNT;
-      const background = currentMap === 'outdoor'
-        ? assetsRef.current.outdoors[outdoorFrame]
-        : assetsRef.current.interiors[campusFrame];
-      if (background?.complete) {
+      const background = currentMap === 'indoor'
+        ? assetsRef.current.interiors[campusFrame]
+        : assetsRef.current.mapImages[currentMap];
+      if (currentMap === 'outdoor') {
+        assetsRef.current.outdoorTiles.forEach((tile, index) => {
+          if (!tile?.complete || !tile.naturalWidth) return;
+          const tileX = index % 2;
+          const tileY = Math.floor(index / 2);
+          context.drawImage(tile, tileX * 768, tileY * 512, 768, 512);
+        });
+      } else if (background?.complete) {
         context.drawImage(background, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
         if (currentMap === 'indoor') refreshOccluderLayer(campusFrame, background);
+      }
+      if (currentMap !== 'indoor') {
+        const overlay = assetsRef.current.overlays[currentMap]?.[outdoorFrame];
+        if (overlay?.complete && overlay.naturalWidth) context.drawImage(overlay, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
       }
 
       if (showMesh) {
@@ -690,9 +775,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       let hiddenByFurniture = false;
       if (currentMap === 'indoor' && occluderLayer && occluderFrameRef.current >= 0) {
         const playerBox = {
-          x1: position.x - 16,
+          x1: position.x - SPRITE_DRAW_SIZE / 4,
           y1: position.y - SPRITE_ANCHOR_Y + 6,
-          x2: position.x + 16,
+          x2: position.x + SPRITE_DRAW_SIZE / 4,
           y2: position.y + 10,
         };
         OCCLUDERS.forEach((object) => {
@@ -721,7 +806,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         baseline: position.y,
         draw: () => {
           const settle = movingRef.current ? 1.04 : 1;
-          drawContactShadow(position.x, position.y, 16 * settle, 0.48);
+          drawContactShadow(position.x, position.y, 11 * settle, 0.46);
           if (playerSheet?.complete && playerSheet.naturalWidth) {
             drawGradedSprite(playerSheet, playerFrame, playerRow, position.x, position.y, 1);
           }
@@ -780,9 +865,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       y: cameraRef.current.y + ((event.clientY - rect.top) / rect.height) * VIEW_HEIGHT,
     };
     const map = activeMapRef.current;
-    const mapNpcs = (map === 'outdoor' ? OUTDOOR_NPC_SPOTS : INDOOR_NPCS)
+    const mapNpcs = MAP_NPCS[map]
       .filter((npc) => npc.id !== selectedAvatar.id);
-    const clickedNpc = mapNpcs.find((npc) => Math.hypot(worldTarget.x - npc.x, worldTarget.y - npc.y) < 34);
+    const clickedNpc = mapNpcs.find((npc) => Math.hypot(worldTarget.x - npc.x, worldTarget.y - npc.y) < 26);
     if (clickedNpc) {
       const character = RESPONDER_ROSTER.find((candidate) => candidate.id === clickedNpc.id);
       if (character) onAvatarSelect(character);
@@ -796,7 +881,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     }
   };
 
-  const nearbyCount = (activeMap === 'outdoor' ? OUTDOOR_NPC_SPOTS : INDOOR_NPCS)
+  const nearbyCount = MAP_NPCS[activeMap]
     .filter((npc) => npc.id !== selectedAvatar.id)
     .filter((npc) => Math.hypot(playerPos.x - npc.x, playerPos.y - npc.y) <= proximityRadius).length;
 
@@ -807,7 +892,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
           <div className="pixel-crest"><Leaf className="h-5 w-5" /></div>
           <div className="min-w-0">
             <p className="game-eyebrow">OPSWARD CAMPUS · MORNING SHIFT</p>
-            <h2 className="truncate text-lg font-black tracking-tight text-[#4a2418]">{activeMap === 'outdoor' ? 'Oakheart Outdoor Campus' : 'Oakheart Operations Hall'}</h2>
+            <h2 className="truncate text-lg font-black tracking-tight text-[#4a2418]">{MAP_TITLES[activeMap]}</h2>
           </div>
         </div>
         <div className="hidden items-center gap-2 md:flex">
@@ -820,7 +905,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         <div className="game-hud-block min-w-0"><MapPin className="h-4 w-4 text-[#b56a2e]" /><div className="min-w-0"><span className="block text-[9px] font-bold uppercase tracking-[.15em] text-[#9b6a45]">Current room</span><strong className="block truncate text-xs text-[#50301f]">{activeRoom}</strong></div></div>
         <div className="game-hud-block hidden sm:flex"><Users className="h-4 w-4 text-[#628858]" /><div><span className="block text-[9px] font-bold uppercase tracking-[.15em] text-[#9b6a45]">Nearby crew</span><strong className="block text-xs text-[#50301f]">{nearbyCount} responders</strong></div></div>
         <div className="ml-auto flex items-center gap-2">
-          <button className="game-icon-button" onClick={() => changeMap(activeMap === 'indoor' ? 'outdoor' : 'indoor')} title={activeMap === 'indoor' ? 'Fast travel to outdoor campus' : 'Return to Operations Hall'}><MapPin className="h-4 w-4" /></button>
+          <button className="game-icon-button" onClick={() => changeMap(activeMap === 'outdoor' ? 'indoor' : 'outdoor')} title={activeMap === 'outdoor' ? 'Fast travel to Operations Hall' : 'Fast travel to outdoor campus'}><MapPin className="h-4 w-4" /></button>
           <button className={`game-icon-button ${isEditorOpen ? 'is-active' : ''}`} onClick={() => setIsEditorOpen(true)} title="Open Visual Drag & Drop Collider Editor"><Layers className="h-4 w-4" /></button>
           <button className={`game-icon-button ${showMesh ? 'is-active' : ''}`} onClick={() => setShowMesh((value) => !value)} title="Toggle proximity mesh"><Headphones className="h-4 w-4" /></button>
           <button className={`game-icon-button ${isMuted ? 'is-danger' : ''}`} onClick={() => setIsMuted((value) => !value)} title="Toggle microphone">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
@@ -830,7 +915,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       <div className="game-canvas-wrap">
         {!assetsReady && <div className="absolute inset-0 z-10 grid place-items-center bg-[#2b1814] text-sm font-bold text-[#f5d78f]"><span><Sparkles className="mr-2 inline h-4 w-4 animate-pulse" />Preparing the campus…</span></div>}
         <canvas ref={canvasRef} width={VIEW_WIDTH} height={VIEW_HEIGHT} onClick={handleCanvasClick} className="block h-full w-full cursor-crosshair" aria-label="Interactive multi-room pixel-art OpsWArd campus" />
-        <div className="game-quest-card"><span className="game-eyebrow">TODAY&apos;S PRIORITY</span><strong>Stabilize payment gateway</strong><span>{activeMap === 'outdoor' ? 'Meet the full response crew · visit the greenhouse' : 'Reach the south exit to explore outdoors'}</span></div>
+        <div className="game-quest-card"><span className="game-eyebrow">TODAY&apos;S PRIORITY</span><strong>Stabilize payment gateway</strong><span>{activeMap === 'outdoor' ? 'Follow the paths and enter each OpsWArd facility' : activeMap === 'indoor' ? 'Coordinate the incident from Central Operations' : 'Inspect this facility · use E at the south exit'}</span></div>
         {nearbyInteractable && <div className="game-interaction-prompt"><kbd>E</kbd><span>{nearbyInteractable.label}</span></div>}
         {interactionNote && <div className="game-interaction-note">{interactionNote}</div>}
         {isPodiumBroadcasting && <div className="game-broadcast-toast"><Radio className="h-3.5 w-3.5" /> Central table broadcast active</div>}
@@ -838,11 +923,15 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
 
       <div className="game-control-bar">
         <div className="flex items-center gap-2 text-[#633924]"><Gamepad2 className="h-4 w-4" /><span><kbd>WASD</kbd> walk · click floor · <kbd>E</kbd> interact · click crew to switch</span></div>
-        <div className="hidden items-center gap-2 sm:flex"><Coffee className="h-4 w-4 text-[#9e5730]" /><span>Spatial range</span><input type="range" min="100" max="260" value={proximityRadius} onChange={(event) => setProximityRadius(Number(event.target.value))} className="w-24 accent-[#b86a31]" /></div>
+        <div className="ml-auto hidden items-center gap-2 sm:flex">
+          <label className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-[#628858]" /><span>Facility</span><select aria-label="Travel to facility" value={activeMap} onChange={(event) => changeMap(event.target.value as WorldMapId)} className="border-2 border-[#7a4a2d] bg-[#f4d995] px-1.5 py-1 text-[9px] font-bold text-[#4a2418] outline-none"><option value="indoor">Operations Hall</option><option value="outdoor">Outdoor Campus</option><option value="greenhouse">Greenhouse</option><option value="relay">SFU Relay</option><option value="workshop">Saga Workshop</option><option value="lodge">Raft Lodge</option><option value="cottage">DLQ Cottage</option></select></label>
+          <Coffee className="h-4 w-4 text-[#9e5730]" /><span>Spatial range</span><input type="range" min="100" max="260" value={proximityRadius} onChange={(event) => setProximityRadius(Number(event.target.value))} className="w-20 accent-[#b86a31]" />
+        </div>
       </div>
 
       <ColliderEditorModal
         isOpen={isEditorOpen}
+        mapId={activeMap}
         onClose={() => setIsEditorOpen(false)}
         onSaved={() => {
           setTimeout(() => window.location.reload(), 500);

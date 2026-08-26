@@ -1,0 +1,12 @@
+{
+  "floors": [{ "x1": 38, "y1": 38, "x2": 1498, "y2": 944 }],
+  "obstacles": [
+    { "id": "north-wall-systems", "x1": 42, "y1": 42, "x2": 1490, "y2": 230 },
+    { "id": "simulation-console", "x1": 45, "y1": 260, "x2": 430, "y2": 460 },
+    { "id": "workflow-table", "x1": 555, "y1": 290, "x2": 970, "y2": 605 },
+    { "id": "runbook-shelves", "x1": 1095, "y1": 285, "x2": 1455, "y2": 600 },
+    { "id": "rollback-workbench", "x1": 85, "y1": 545, "x2": 455, "y2": 830 },
+    { "id": "orchestration-desk", "x1": 565, "y1": 625, "x2": 945, "y2": 835 },
+    { "id": "coffee-nook", "x1": 1085, "y1": 620, "x2": 1455, "y2": 905 }
+  ]
+}

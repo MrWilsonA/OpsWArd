@@ -1,0 +1,16 @@
+{
+  "floors": [{ "x1": 38, "y1": 38, "x2": 1498, "y2": 944 }],
+  "obstacles": [
+    { "id": "northwest-nodes", "x1": 35, "y1": 35, "x2": 440, "y2": 365 },
+    { "id": "north-command", "x1": 485, "y1": 35, "x2": 1050, "y2": 195 },
+    { "id": "commander-desk", "x1": 610, "y1": 205, "x2": 915, "y2": 385 },
+    { "id": "northeast-simulation", "x1": 1100, "y1": 35, "x2": 1500, "y2": 370 },
+    { "id": "west-ledger", "x1": 35, "y1": 380, "x2": 435, "y2": 595 },
+    { "id": "east-ledger", "x1": 1100, "y1": 385, "x2": 1500, "y2": 595 },
+    { "id": "quorum-table", "x1": 610, "y1": 430, "x2": 930, "y2": 690, "shape": "ellipse" },
+    { "id": "node-desk-a", "x1": 455, "y1": 650, "x2": 720, "y2": 855 },
+    { "id": "node-desk-b", "x1": 815, "y1": 650, "x2": 1085, "y2": 855 },
+    { "id": "fireplace-debrief", "x1": 35, "y1": 605, "x2": 425, "y2": 930 },
+    { "id": "standby-debrief", "x1": 1110, "y1": 605, "x2": 1495, "y2": 930 }
+  ]
+}

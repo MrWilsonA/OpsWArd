@@ -1,0 +1,14 @@
+{
+  "floors": [{ "x1": 38, "y1": 38, "x2": 1498, "y2": 944 }],
+  "obstacles": [
+    { "id": "north-benches", "x1": 45, "y1": 42, "x2": 1490, "y2": 250 },
+    { "id": "west-tanks", "x1": 45, "y1": 350, "x2": 320, "y2": 625 },
+    { "id": "northwest-grow-bed", "x1": 380, "y1": 275, "x2": 675, "y2": 510 },
+    { "id": "northeast-grow-bed", "x1": 865, "y1": 275, "x2": 1165, "y2": 510 },
+    { "id": "center-grow-bed", "x1": 605, "y1": 545, "x2": 925, "y2": 790 },
+    { "id": "east-sample-cabinets", "x1": 1200, "y1": 350, "x2": 1455, "y2": 610 },
+    { "id": "quiet-lounge", "x1": 1190, "y1": 620, "x2": 1450, "y2": 880 },
+    { "id": "southwest-planters", "x1": 40, "y1": 820, "x2": 610, "y2": 940 },
+    { "id": "southeast-planters", "x1": 930, "y1": 820, "x2": 1495, "y2": 940 }
+  ]
+}

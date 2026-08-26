@@ -33,6 +33,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
+import { MAP_BACKGROUNDS, WorldMapId } from '@/lib/world-maps';
 
 interface FloorRect {
   x1: number;
@@ -55,6 +56,7 @@ interface ObstacleRect {
 
 interface ColliderEditorModalProps {
   isOpen: boolean;
+  mapId: WorldMapId;
   onClose: () => void;
   onSaved?: () => void;
 }
@@ -74,6 +76,7 @@ const ROOM_SHORTCUTS = [
 
 export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   isOpen,
+  mapId,
   onClose,
   onSaved,
 }) => {
@@ -133,7 +136,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   // Load Initial Colliders
   const loadColliders = useCallback(async () => {
     try {
-      const res = await fetch('/api/colliders');
+      const res = await fetch(`/api/colliders?map=${mapId}`);
       if (res.ok) {
         const data = await res.json();
         setFloors(data.floors || []);
@@ -144,16 +147,16 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     } catch (err) {
       console.error('Failed to fetch colliders:', err);
     }
-  }, []);
+  }, [mapId]);
 
   useEffect(() => {
     if (isOpen) {
       loadColliders();
       const img = new Image();
-      img.src = '/game-assets/campus-loop-frames/campus-00.png';
+      img.src = MAP_BACKGROUNDS[mapId];
       img.onload = () => setBgImage(img);
     }
-  }, [isOpen, loadColliders]);
+  }, [isOpen, loadColliders, mapId]);
 
   // Record History for Undo (Clears Redo stack on new change)
   const recordHistory = useCallback(() => {
@@ -205,7 +208,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       const res = await fetch('/api/colliders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ floors, obstacles }),
+        body: JSON.stringify({ floors, obstacles, mapId }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -837,7 +840,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
               <Layers className="w-4 h-4" />
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-amber-100 tracking-tight">Collider Studio</span>
+              <span className="font-bold text-sm text-amber-100 tracking-tight">Collider Studio · {mapId}</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
                 v2.1
               </span>
@@ -847,7 +850,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
           {/* Center Room Jump Buttons */}
           <div className="hidden md:flex items-center gap-1 px-2 py-0.5 bg-black/40 border border-neutral-800 rounded-lg overflow-x-auto">
             <span className="text-[10px] font-bold text-neutral-500 uppercase px-1">Jump:</span>
-            {ROOM_SHORTCUTS.map((r) => (
+            {(mapId === 'indoor' ? ROOM_SHORTCUTS : [{ name: mapId, x: 768, y: 512, color: '#f59e0b' }]).map((r) => (
               <button
                 key={r.name}
                 onClick={() => jumpTo(r.x, r.y)}

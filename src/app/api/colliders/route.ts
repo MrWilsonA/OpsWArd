@@ -5,12 +5,19 @@ import { exec } from 'child_process';
 import util from 'util';
 
 const execPromise = util.promisify(exec);
-const COLLIDERS_PATH = path.join(process.cwd(), 'src', 'lib', 'campus-colliders.json');
+const MAP_IDS = new Set(['indoor', 'outdoor', 'greenhouse', 'relay', 'workshop', 'lodge', 'cottage']);
 
-export async function GET() {
+const getCollidersPath = (mapId: string) => mapId === 'indoor'
+  ? path.join(process.cwd(), 'src', 'lib', 'campus-colliders.json')
+  : path.join(process.cwd(), 'src', 'lib', 'map-colliders', `${mapId}.json`);
+
+export async function GET(req: NextRequest) {
   try {
-    if (fs.existsSync(COLLIDERS_PATH)) {
-      const data = JSON.parse(fs.readFileSync(COLLIDERS_PATH, 'utf-8'));
+    const mapId = req.nextUrl.searchParams.get('map') ?? 'indoor';
+    if (!MAP_IDS.has(mapId)) return NextResponse.json({ error: 'Unknown map' }, { status: 400 });
+    const collidersPath = getCollidersPath(mapId);
+    if (fs.existsSync(collidersPath)) {
+      const data = JSON.parse(fs.readFileSync(collidersPath, 'utf-8'));
       return NextResponse.json(data);
     }
     return NextResponse.json({ floors: [], obstacles: [] });
@@ -22,7 +29,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { floors, obstacles } = body;
+    const { floors, obstacles, mapId = 'indoor' } = body;
+
+    if (!MAP_IDS.has(mapId)) return NextResponse.json({ error: 'Unknown map' }, { status: 400 });
 
     if (!Array.isArray(floors) || !Array.isArray(obstacles)) {
       return NextResponse.json({ error: 'Invalid payload: floors and obstacles must be arrays' }, { status: 400 });
@@ -48,10 +57,17 @@ export async function POST(req: NextRequest) {
       })),
     };
 
-    fs.writeFileSync(COLLIDERS_PATH, JSON.stringify(data, null, 2), 'utf-8');
+    const collidersPath = getCollidersPath(mapId);
+    fs.mkdirSync(path.dirname(collidersPath), { recursive: true });
+    fs.writeFileSync(collidersPath, JSON.stringify(data, null, 2), 'utf-8');
 
-    // Run build_campus_layout.py to re-bake collision mask and layout json
-    const { stdout, stderr } = await execPromise('python tools/build_campus_layout.py', { cwd: process.cwd() });
+    // Only the legacy indoor hall uses a baked pixel mask. Other maps consume
+    // their authored collider JSON directly after reload.
+    let stdout = `${mapId} collider JSON saved.`;
+    if (mapId === 'indoor') {
+      const result = await execPromise('python tools/build_campus_layout.py', { cwd: process.cwd() });
+      stdout = result.stdout;
+    }
 
     return NextResponse.json({
       success: true,
