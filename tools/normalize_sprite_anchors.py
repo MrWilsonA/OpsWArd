@@ -50,9 +50,9 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
 
         row_slice = arr[y1_src:y2_src, :].copy()
 
-        # If row 2, clear the bottom 10px where row 3 head might leak
-        if row == 2 and row_slice.shape[0] == CELL:
-            row_slice[54:, :] = 0
+        # If row 2, strictly clear bottom 16px where row 3 head might leak
+        if row == 2:
+            row_slice[row_slice.shape[0] - 16 :, :] = 0
 
         col_splits = dynamic_column_split(row_slice[..., 3])
 
@@ -60,25 +60,43 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
             x1_src, x2_src = col_splits[col]
             cell = row_slice[:, x1_src:x2_src].copy()
 
-            # Remove edge leak components from neighbor cells and small 1-2px floating dust
+            # Remove disconnected edge leaks from neighbor cells and small 1-2px floating dust
             binary = cell[..., 3] > 20
             labeled, num_features = ndimage.label(binary)
             if num_features > 0:
                 sizes = ndimage.sum_labels(binary, labeled, range(1, num_features + 1))
-                largest_size = float(max(sizes))
+                main_label = int(np.argmax(sizes)) + 1
 
                 for label_idx, size in enumerate(sizes, 1):
-                    pts = np.argwhere(labeled == label_idx)
-                    touches_edge = (
-                        pts[:, 0].min() <= 1
-                        or pts[:, 0].max() >= cell.shape[0] - 2
-                        or pts[:, 1].min() <= 1
-                        or pts[:, 1].max() >= cell.shape[1] - 2
-                    )
-                    if touches_edge and size < largest_size * 0.20:
-                        cell[labeled == label_idx] = 0
-                    elif size <= 3:
-                        cell[labeled == label_idx] = 0
+                    if label_idx != main_label and size <= 45:
+                        pts = np.argwhere(labeled == label_idx)
+                        touches_edge = (
+                            pts[:, 0].min() <= 1
+                            or pts[:, 0].max() >= cell.shape[0] - 2
+                            or pts[:, 1].min() <= 1
+                            or pts[:, 1].max() >= cell.shape[1] - 2
+                        )
+                        if touches_edge or size <= 3:
+                            cell[labeled == label_idx] = 0
+
+            # Fill any hollow internal holes or concavities in hair / skin / clothes
+            binary_clean = cell[..., 3] > 20
+            closed = ndimage.binary_closing(binary_clean, structure=np.ones((5, 5)))
+            solid = ndimage.binary_fill_holes(closed)
+            holes = solid & ~binary_clean
+
+            if np.any(holes):
+                upper_pixels = cell[(cell[..., 3] > 20) & (np.indices(cell.shape[:2])[0] < int(cell.shape[0] * 0.5))]
+                if len(upper_pixels) > 0:
+                    med_r = int(np.median(upper_pixels[..., 0]))
+                    med_g = int(np.median(upper_pixels[..., 1]))
+                    med_b = int(np.median(upper_pixels[..., 2]))
+                else:
+                    med_r, med_g, med_b = 222, 228, 232
+                cell[holes, 0] = med_r
+                cell[holes, 1] = med_g
+                cell[holes, 2] = med_b
+                cell[holes, 3] = 255
 
             frame_img = Image.fromarray(cell, "RGBA")
             frames.append(frame_img)
