@@ -130,16 +130,8 @@ OBSTACLES: list[dict] = [
     dict(id="ne-plant", rect=(812, 263, 856, 349)),
     dict(id="ne-planter", rect=(896, 368, 1018, 426)),
     dict(id="ne-cabinet", rect=(952, 248, 1000, 355)),
-    # Central hall - command table & all surrounding chairs
-    dict(id="command-table", rect=(630, 405, 875, 630), shape="ellipse"),
-    dict(id="command-chair-top", rect=(720, 388, 785, 445)),
-    dict(id="command-chair-bottom", rect=(720, 590, 785, 650)),
-    dict(id="command-chair-left", rect=(614, 490, 670, 548)),
-    dict(id="command-chair-right", rect=(835, 490, 890, 548)),
-    dict(id="command-chair-nw", rect=(638, 418, 698, 482)),
-    dict(id="command-chair-ne", rect=(806, 418, 868, 482)),
-    dict(id="command-chair-sw", rect=(638, 558, 698, 626)),
-    dict(id="command-chair-se", rect=(806, 558, 875, 635)),
+    # Central hall - command table (smooth circular ellipse covering table + surrounding chairs)
+    dict(id="command-table", rect=(633, 398, 873, 634), shape="ellipse", occlude=False),
     # Central hall - south pods & doorway partitions
     dict(id="sw-pod-wall", rect=(478, 574, 508, 810)),
     dict(id="sw-pod-left-post", rect=(478, 740, 510, 810)),
@@ -197,13 +189,9 @@ def build_masks():
     for obstacle in OBSTACLES:
         x1, y1, x2, y2 = obstacle["rect"]
         shape = obstacle.get("shape", "rect")
-        rasterise((x1, y1, x2, y2), shape, occluder, True)
+        if obstacle.get("occlude", True):
+            rasterise((x1, y1, x2, y2), shape, occluder, True)
         if obstacle.get("through"):
-            # Walk-behind furniture: only a shallow strip along the foot of the
-            # piece opens up, so the avatar tucks in behind it instead of
-            # wandering deep into a cabinet and surfacing inside the wall.
-            # Short pieces - a pot, a low console - open up entirely, otherwise
-            # they would plug an aisle. Tall ones keep a solid upper body.
             depth = y2 - y1 if y2 - y1 <= SHORT_PIECE else THROUGH_DEPTH
             rasterise((x1, y2 - depth, x2, y2), shape, walkable, True)
             if y2 - depth > y1:
@@ -242,6 +230,8 @@ def carve_floor_from_occluder(rgb: np.ndarray, walkable: np.ndarray, occluder: n
     open_floor = walkable & ~occluder
 
     for obstacle in OBSTACLES:
+        if not obstacle.get("occlude", True):
+            continue
         x1, y1, x2, y2 = obstacle["rect"]
         pad = 16
         rx1, ry1 = max(0, x1 - pad), max(0, y1 - pad)
@@ -313,6 +303,7 @@ def main() -> int:
                 "through": bool(obstacle.get("through")),
             }
             for obstacle in OBSTACLES
+            if obstacle.get("occlude", True)
         ],
     }
     LAYOUT_JSON.write_text(json.dumps(layout, indent=2) + "\n", encoding="utf-8")
