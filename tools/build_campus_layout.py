@@ -31,47 +31,61 @@ LAYOUT_JSON = ROOT / "src/lib/campus-layout.json"
 DEBUG_PNG = ROOT / "tools/debug-campus-layout.png"
 
 WORLD_WIDTH, WORLD_HEIGHT = 1536, 1024
+COLLIDERS_JSON = ROOT / "src/lib/campus-colliders.json"
 
-# --- walkable surfaces -------------------------------------------------------
-FLOORS: list[tuple[int, int, int, int]] = [
-    # Server Vault
-    (58, 240, 405, 336),
-    (370, 170, 440, 336),
-    # Security Watch
-    (88, 378, 400, 622),
-    # Archive Library, plus the east aisle running up beside the shelves
-    (96, 756, 444, 946),
-    (440, 756, 480, 882),
-    # Data Garden
-    (1085, 170, 1500, 330),
-    # Briefing Room
-    (1095, 465, 1500, 620),
-    # Pantry Lounge
-    (1020, 760, 1500, 947),
-    # Central hall + arrival landing
-    (440, 186, 1065, 636),
-    (490, 636, 1012, 890),
-    (620, 890, 884, 966),
-    # Doorway thresholds where the dividing wall is only a few pixels thick
-    (380, 168, 480, 290),
-    (396, 470, 448, 600),
-    (1056, 240, 1098, 312),
-    (1056, 480, 1100, 600),
-    (462, 780, 500, 878),
-    (1004, 780, 1042, 878),
-]
+# Load floors and obstacles from JSON if present, otherwise fallback
+if COLLIDERS_JSON.exists():
+    _cdata = json.loads(COLLIDERS_JSON.read_text(encoding="utf-8"))
+    FLOORS: list[tuple[int, int, int, int]] = [
+        (int(f["x1"]), int(f["y1"]), int(f["x2"]), int(f["y2"])) for f in _cdata.get("floors", [])
+    ]
+    OBSTACLES: list[dict] = [
+        {
+            "id": ob["id"],
+            "rect": (int(ob["x1"]), int(ob["y1"]), int(ob["x2"]), int(ob["y2"])),
+            "shape": ob.get("shape", "rect"),
+            "through": ob.get("through", False),
+            "base": ob.get("base"),
+            "occlude": ob.get("occlude", True),
+        }
+        for ob in _cdata.get("obstacles", [])
+    ]
+else:
+    # --- walkable surfaces -------------------------------------------------------
+    FLOORS: list[tuple[int, int, int, int]] = [
+        # Server Vault
+        (58, 240, 405, 336),
+        (370, 170, 440, 336),
+        # Security Watch
+        (88, 378, 400, 622),
+        # Archive Library, plus the east aisle running up beside the shelves
+        (96, 756, 444, 946),
+        (440, 756, 480, 882),
+        # Data Garden
+        (1085, 170, 1500, 330),
+        # Briefing Room
+        (1095, 465, 1500, 620),
+        # Pantry Lounge
+        (1020, 760, 1500, 947),
+        # Central hall + arrival landing
+        (440, 186, 1065, 636),
+        (490, 636, 1012, 890),
+        (620, 890, 884, 966),
+        # Doorway thresholds where the dividing wall is only a few pixels thick
+        (380, 168, 480, 290),
+        (396, 470, 448, 600),
+        (1056, 240, 1098, 312),
+        (1056, 480, 1100, 600),
+        (462, 780, 500, 878),
+        (1004, 780, 1042, 878),
+    ]
 
-# --- obstacles ---------------------------------------------------------------
-# Default: solid across the whole footprint. through=True marks tall furniture
-# standing against a wall - shelves, cabinets, counters, racks. Those never
-# block, so a character can tuck in behind them when a room gets tight, and the
-# occluder pass paints them back over the character. Anything a person could
-# walk around instead (desks, tables, sofas, planters) stays solid.
-OBSTACLES: list[dict] = [
-    # Server Vault
-    dict(id="vault-racks", rect=(100, 140, 340, 240)),
-    dict(id="vault-cabinet", rect=(338, 140, 376, 240)),
-    dict(id="vault-desk", rect=(138, 242, 310, 322)),
+    # --- obstacles ---------------------------------------------------------------
+    OBSTACLES: list[dict] = [
+        # Server Vault
+        dict(id="vault-racks", rect=(100, 140, 340, 240)),
+        dict(id="vault-cabinet", rect=(338, 140, 376, 240)),
+        dict(id="vault-desk", rect=(138, 242, 310, 322)),
     # Security Watch
     dict(id="security-wall-screens", rect=(100, 372, 312, 464)),
     dict(id="security-desk", rect=(114, 462, 298, 560)),

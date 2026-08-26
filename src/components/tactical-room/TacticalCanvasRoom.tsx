@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CharacterProfile, RESPONDER_ROSTER } from '@/lib/characters';
 import { TacticalPosition } from '@/types/opsward';
 import campusLayout from '@/lib/campus-layout.json';
-import { Clock3, Coffee, Gamepad2, Headphones, Leaf, MapPin, Radio, Sparkles, Users, Volume2, VolumeX } from 'lucide-react';
+import { Clock3, Coffee, Gamepad2, Headphones, Layers, Leaf, MapPin, Radio, Sparkles, Users, Volume2, VolumeX } from 'lucide-react';
+import { ColliderEditorModal } from './ColliderEditorModal';
 
 interface TacticalCanvasRoomProps {
   selectedAvatar: CharacterProfile;
@@ -280,6 +281,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const [showMesh, setShowMesh] = useState(false);
   const [nearbyInteractable, setNearbyInteractable] = useState<Interactable | null>(null);
   const [interactionNote, setInteractionNote] = useState('');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -689,6 +691,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         <div className="game-hud-block min-w-0"><MapPin className="h-4 w-4 text-[#b56a2e]" /><div className="min-w-0"><span className="block text-[9px] font-bold uppercase tracking-[.15em] text-[#9b6a45]">Current room</span><strong className="block truncate text-xs text-[#50301f]">{activeRoom}</strong></div></div>
         <div className="game-hud-block hidden sm:flex"><Users className="h-4 w-4 text-[#628858]" /><div><span className="block text-[9px] font-bold uppercase tracking-[.15em] text-[#9b6a45]">Nearby crew</span><strong className="block text-xs text-[#50301f]">{nearbyCount} responders</strong></div></div>
         <div className="ml-auto flex items-center gap-2">
+          <button className={`game-icon-button ${isEditorOpen ? 'is-active' : ''}`} onClick={() => setIsEditorOpen(true)} title="Open Visual Drag & Drop Collider Editor"><Layers className="h-4 w-4" /></button>
           <button className={`game-icon-button ${showMesh ? 'is-active' : ''}`} onClick={() => setShowMesh((value) => !value)} title="Toggle proximity mesh"><Headphones className="h-4 w-4" /></button>
           <button className={`game-icon-button ${isMuted ? 'is-danger' : ''}`} onClick={() => setIsMuted((value) => !value)} title="Toggle microphone">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
         </div>
@@ -707,6 +710,14 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         <div className="flex items-center gap-2 text-[#633924]"><Gamepad2 className="h-4 w-4" /><span><kbd>WASD</kbd> walk · click floor · <kbd>E</kbd> interact · click crew to switch</span></div>
         <div className="hidden items-center gap-2 sm:flex"><Coffee className="h-4 w-4 text-[#9e5730]" /><span>Spatial range</span><input type="range" min="100" max="260" value={proximityRadius} onChange={(event) => setProximityRadius(Number(event.target.value))} className="w-24 accent-[#b86a31]" /></div>
       </div>
+
+      <ColliderEditorModal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        onSaved={() => {
+          setTimeout(() => window.location.reload(), 500);
+        }}
+      />
     </section>
   );
 };
