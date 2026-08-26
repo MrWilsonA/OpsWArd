@@ -14,90 +14,77 @@ TARGET_MAX_H = 50
 OUTLINE = (24, 18, 22, 255)
 
 
-def dynamic_column_split(row_alpha: np.ndarray) -> list[tuple[int, int]]:
-    col_proj = np.sum(row_alpha > 0, axis=0) > 0
-    labeled, num = ndimage.label(col_proj)
+def get_row_splits(sheet_alpha: np.ndarray) -> list[tuple[int, int]]:
+    row_proj = np.sum(sheet_alpha > 20, axis=1) > 0
+    labeled, num = ndimage.label(row_proj)
     if num >= 4:
-        sizes = ndimage.sum_labels(col_proj, labeled, range(1, num + 1))
+        sizes = ndimage.sum_labels(row_proj, labeled, range(1, num + 1))
         large_labels = sorted(range(1, num + 1), key=lambda l: sizes[l - 1], reverse=True)[:4]
         large_labels.sort(key=lambda l: int(np.argwhere(labeled == l).min()))
-
         splits = [0]
         for i in range(3):
             l_cur = large_labels[i]
             l_next = large_labels[i + 1]
             end_cur = int(np.argwhere(labeled == l_cur).max())
             start_next = int(np.argwhere(labeled == l_next).min())
-            split_x = (end_cur + start_next) // 2
-            splits.append(split_x)
+            splits.append((end_cur + start_next) // 2)
         splits.append(256)
         return [(int(splits[i]), int(splits[i + 1])) for i in range(4)]
-    return [(0, 75), (75, 127), (127, 178), (178, 256)]
+    return [(0, 64), (64, 128), (128, 192), (192, 256)]
+
+
+def get_col_splits(row_alpha: np.ndarray) -> list[tuple[int, int]]:
+    col_proj = np.sum(row_alpha > 20, axis=0) > 0
+    labeled, num = ndimage.label(col_proj)
+    if num >= 4:
+        sizes = ndimage.sum_labels(col_proj, labeled, range(1, num + 1))
+        large_labels = sorted(range(1, num + 1), key=lambda l: sizes[l - 1], reverse=True)[:4]
+        large_labels.sort(key=lambda l: int(np.argwhere(labeled == l).min()))
+        splits = [0]
+        for i in range(3):
+            l_cur = large_labels[i]
+            l_next = large_labels[i + 1]
+            end_cur = int(np.argwhere(labeled == l_cur).max())
+            start_next = int(np.argwhere(labeled == l_next).min())
+            splits.append((end_cur + start_next) // 2)
+        splits.append(256)
+        return [(int(splits[i]), int(splits[i + 1])) for i in range(4)]
+    return [(0, 64), (64, 128), (128, 192), (192, 256)]
 
 
 def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
     original = Image.open(source).convert("RGBA")
     arr = np.asarray(original).copy()
 
+    row_splits = get_row_splits(arr[..., 3])
     frames: list[Image.Image] = []
     boxes: list[tuple[int, int, int, int] | None] = []
 
-    for row in range(4):
-        # Row 3 (facing up) captures round head overflow from row 2
-        overflow_top = 10 if row == 3 else 0
-        y1_src = max(0, row * CELL - overflow_top)
-        y2_src = (row + 1) * CELL
+    for row_idx, (y1, y2) in enumerate(row_splits):
+        row_slice = arr[y1:y2, :].copy()
+        col_splits = get_col_splits(row_slice[..., 3])
 
-        row_slice = arr[y1_src:y2_src, :].copy()
-        col_splits = dynamic_column_split(row_slice[..., 3])
+        for col_idx, (x1, x2) in enumerate(col_splits):
+            cell = row_slice[:, x1:x2].copy()
 
-        for col in range(4):
-            x1_src, x2_src = col_splits[col]
-            cell = row_slice[:, x1_src:x2_src].copy()
-
+            # Fill internal holes (e.g. hair highlights)
             binary = cell[..., 3] > 20
-            labeled, num_features = ndimage.label(binary)
-            if num_features > 0:
-                sizes = ndimage.sum_labels(binary, labeled, range(1, num_features + 1))
-                main_label = int(np.argmax(sizes)) + 1
-                main_pts = np.argwhere(labeled == main_label)
-                main_min_y, main_max_y = main_pts[:, 0].min(), main_pts[:, 0].max()
-
-                # Keep main component + close connected accessories, discard detached neighbor leaks
-                keep_mask = labeled == main_label
-                for label_idx, size in enumerate(sizes, 1):
-                    if label_idx == main_label:
-                        continue
-                    pts = np.argwhere(labeled == label_idx)
-                    comp_min_y, comp_max_y = pts[:, 0].min(), pts[:, 0].max()
-
-                    # Discard if it is above main head or below main feet
-                    is_above = comp_max_y < main_min_y
-                    is_below = comp_min_y > main_max_y
-
-                    if not is_above and not is_below and size >= 4:
-                        keep_mask |= labeled == label_idx
-
-                cell[~keep_mask] = 0
-
-            # Fill any hollow internal holes inside hair / skin / clothes
-            binary_clean = cell[..., 3] > 20
-            closed = ndimage.binary_closing(binary_clean, structure=np.ones((5, 5)))
-            solid = ndimage.binary_fill_holes(closed)
-            holes = solid & ~binary_clean
-
-            if np.any(holes):
-                upper_pixels = cell[(cell[..., 3] > 20) & (np.indices(cell.shape[:2])[0] < int(cell.shape[0] * 0.5))]
-                if len(upper_pixels) > 0:
-                    med_r = int(np.median(upper_pixels[..., 0]))
-                    med_g = int(np.median(upper_pixels[..., 1]))
-                    med_b = int(np.median(upper_pixels[..., 2]))
-                else:
-                    med_r, med_g, med_b = 222, 228, 232
-                cell[holes, 0] = med_r
-                cell[holes, 1] = med_g
-                cell[holes, 2] = med_b
-                cell[holes, 3] = 255
+            if np.any(binary):
+                closed = ndimage.binary_closing(binary, structure=np.ones((5, 5)))
+                solid = ndimage.binary_fill_holes(closed)
+                holes = solid & ~binary
+                if np.any(holes):
+                    upper_pixels = cell[(cell[..., 3] > 20) & (np.indices(cell.shape[:2])[0] < int(cell.shape[0] * 0.5))]
+                    if len(upper_pixels) > 0:
+                        med_r = int(np.median(upper_pixels[..., 0]))
+                        med_g = int(np.median(upper_pixels[..., 1]))
+                        med_b = int(np.median(upper_pixels[..., 2]))
+                    else:
+                        med_r, med_g, med_b = 222, 228, 232
+                    cell[holes, 0] = med_r
+                    cell[holes, 1] = med_g
+                    cell[holes, 2] = med_b
+                    cell[holes, 3] = 255
 
             frame_img = Image.fromarray(cell, "RGBA")
             frames.append(frame_img)
@@ -105,9 +92,9 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
             f_alpha = np.asarray(frame_img.getchannel("A"))
             pts = np.argwhere(f_alpha > 0)
             if pts.size > 0:
-                y1, x1 = pts.min(axis=0)
-                y2, x2 = pts.max(axis=0) + 1
-                boxes.append((int(x1), int(y1), int(x2), int(y2)))
+                fy1, fx1 = pts.min(axis=0)
+                fy2, fx2 = pts.max(axis=0) + 1
+                boxes.append((int(fx1), int(fy1), int(fx2), int(fy2)))
             else:
                 boxes.append(None)
 
@@ -163,6 +150,7 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     output.save(destination, optimize=False)
+
 
 
 def main() -> None:
