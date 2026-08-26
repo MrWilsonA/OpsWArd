@@ -43,43 +43,44 @@ def clean_and_normalize_sheet(source: Path, destination: Path) -> None:
     boxes: list[tuple[int, int, int, int] | None] = []
 
     for row in range(4):
-        # Row 3 (facing up) has round head overflow from row 2
-        overflow_top = 12 if row == 3 else 0
+        # Row 3 (facing up) captures round head overflow from row 2
+        overflow_top = 10 if row == 3 else 0
         y1_src = max(0, row * CELL - overflow_top)
         y2_src = (row + 1) * CELL
 
         row_slice = arr[y1_src:y2_src, :].copy()
-
-        # If row 2, strictly clear bottom 16px where row 3 head might leak
-        if row == 2:
-            row_slice[row_slice.shape[0] - 16 :, :] = 0
-
         col_splits = dynamic_column_split(row_slice[..., 3])
 
         for col in range(4):
             x1_src, x2_src = col_splits[col]
             cell = row_slice[:, x1_src:x2_src].copy()
 
-            # Remove disconnected edge leaks from neighbor cells and small 1-2px floating dust
             binary = cell[..., 3] > 20
             labeled, num_features = ndimage.label(binary)
             if num_features > 0:
                 sizes = ndimage.sum_labels(binary, labeled, range(1, num_features + 1))
                 main_label = int(np.argmax(sizes)) + 1
+                main_pts = np.argwhere(labeled == main_label)
+                main_min_y, main_max_y = main_pts[:, 0].min(), main_pts[:, 0].max()
 
+                # Keep main component + close connected accessories, discard detached neighbor leaks
+                keep_mask = labeled == main_label
                 for label_idx, size in enumerate(sizes, 1):
-                    if label_idx != main_label and size <= 45:
-                        pts = np.argwhere(labeled == label_idx)
-                        touches_edge = (
-                            pts[:, 0].min() <= 1
-                            or pts[:, 0].max() >= cell.shape[0] - 2
-                            or pts[:, 1].min() <= 1
-                            or pts[:, 1].max() >= cell.shape[1] - 2
-                        )
-                        if touches_edge or size <= 3:
-                            cell[labeled == label_idx] = 0
+                    if label_idx == main_label:
+                        continue
+                    pts = np.argwhere(labeled == label_idx)
+                    comp_min_y, comp_max_y = pts[:, 0].min(), pts[:, 0].max()
 
-            # Fill any hollow internal holes or concavities in hair / skin / clothes
+                    # Discard if it is above main head or below main feet
+                    is_above = comp_max_y < main_min_y
+                    is_below = comp_min_y > main_max_y
+
+                    if not is_above and not is_below and size >= 4:
+                        keep_mask |= labeled == label_idx
+
+                cell[~keep_mask] = 0
+
+            # Fill any hollow internal holes inside hair / skin / clothes
             binary_clean = cell[..., 3] > 20
             closed = ndimage.binary_closing(binary_clean, structure=np.ones((5, 5)))
             solid = ndimage.binary_fill_holes(closed)
