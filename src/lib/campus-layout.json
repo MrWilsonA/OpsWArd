@@ -154,10 +154,10 @@
     },
     {
       "id": "archive-shelf-right",
-      "x": 391,
-      "y": 774,
+      "x": 389,
+      "y": 780,
       "width": 46,
-      "height": 152,
+      "height": 146,
       "baseline": 926,
       "through": false
     },
@@ -173,9 +173,9 @@
     {
       "id": "archive-plant-se",
       "x": 444,
-      "y": 882,
+      "y": 902,
       "width": 42,
-      "height": 64,
+      "height": 44,
       "baseline": 946,
       "through": false
     },
