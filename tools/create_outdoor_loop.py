@@ -1,0 +1,133 @@
+"""Normalize the generated outdoor art and build a restrained 10-frame pixel loop.
+
+All animation is clipped to semantic masks: water shimmer stays on water,
+foliage motion stays inside foliage, and pollen is drawn only at authored spots.
+"""
+
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / "public" / "game-assets"
+SOURCE = ASSETS / "opsward-outdoor-v2-source.png"
+BASE = ASSETS / "opsward-outdoor-v2.png"
+FRAME_DIR = ASSETS / "outdoor-loop-frames"
+GIF = ASSETS / "opsward-outdoor-loop.gif"
+PREVIEW = ASSETS / "opsward-outdoor-loop-preview.png"
+
+WIDTH, HEIGHT = 1536, 1024
+LOGICAL_WIDTH, LOGICAL_HEIGHT = WIDTH // 2, HEIGHT // 2
+FRAME_COUNT = 10
+
+
+def roi_mask(boxes: list[tuple[int, int, int, int]]) -> np.ndarray:
+    mask = np.zeros((HEIGHT, WIDTH), dtype=bool)
+    for x1, y1, x2, y2 in boxes:
+        mask[y1:y2, x1:x2] = True
+    return mask
+
+
+def normalize_source() -> Image.Image:
+    source = Image.open(SOURCE).convert("RGB")
+    source = source.resize((LOGICAL_WIDTH, LOGICAL_HEIGHT), Image.Resampling.NEAREST)
+    # A compact palette and zero dithering remove generated micro-noise while
+    # retaining readable tile clusters and hard square pixels.
+    source = source.quantize(colors=144, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB")
+    return source.resize((WIDTH, HEIGHT), Image.Resampling.NEAREST)
+
+
+def main() -> None:
+    FRAME_DIR.mkdir(parents=True, exist_ok=True)
+    base = normalize_source()
+    base.save(BASE, optimize=True)
+    pixels = np.asarray(base).copy()
+    red, green, blue = pixels[..., 0], pixels[..., 1], pixels[..., 2]
+
+    water_regions = roi_mask([
+        (350, 0, 535, 390),      # north stream
+        (0, 270, 280, 1024),     # west stream and pools
+        (510, 775, 1010, 1024),  # south pond
+    ])
+    water_colour = (
+        (blue.astype(np.int16) >= red.astype(np.int16) + 4)
+        & (green.astype(np.int16) >= red.astype(np.int16) + 7)
+        & (blue > 48)
+        & (green > 55)
+    )
+    water = water_regions & water_colour
+
+    foliage_regions = roi_mask([
+        (0, 0, 1536, 210),
+        (0, 140, 570, 1024),
+        (940, 120, 1536, 1024),
+        (360, 330, 1180, 790),
+    ])
+    foliage_colour = (
+        (green.astype(np.int16) >= red.astype(np.int16) + 10)
+        & (green.astype(np.int16) >= blue.astype(np.int16) + 2)
+        & (green > 48)
+        & (green < 170)
+    )
+    foliage = foliage_regions & foliage_colour
+
+    pollen_origins = [
+        (560, 382), (676, 348), (835, 372), (980, 418),
+        (477, 530), (1062, 552), (585, 676), (920, 690),
+        (408, 806), (1120, 770), (718, 744), (876, 830),
+    ]
+
+    frames: list[Image.Image] = []
+    base16 = pixels.astype(np.int16)
+    yy, xx = np.indices((HEIGHT, WIDTH))
+    for frame_index in range(FRAME_COUNT):
+        animated = base16.copy()
+
+        # Two-pixel wide diagonal ripples travel only through water colours.
+        wave = water & (((xx // 2 + yy // 4 + frame_index * 3) % 31) < 2)
+        trough = water & (((xx // 3 - yy // 5 + frame_index * 2) % 37) < 2)
+        animated[wave] += np.array([10, 17, 20], dtype=np.int16)
+        animated[trough] -= np.array([5, 7, 3], dtype=np.int16)
+
+        # A one-tone breathing shift reads as leaf sway without translating
+        # foliage outside its own silhouette.
+        leaf_phase = foliage & (((xx // 8 + yy // 8 + frame_index) % 10) == 0)
+        leaf_shadow = foliage & (((xx // 10 - yy // 7 + frame_index) % 13) == 0)
+        animated[leaf_phase] += np.array([4, 9, 2], dtype=np.int16)
+        animated[leaf_shadow] -= np.array([3, 5, 2], dtype=np.int16)
+
+        image = Image.fromarray(np.clip(animated, 0, 255).astype(np.uint8), "RGB")
+        draw = ImageDraw.Draw(image)
+        for particle_index, (origin_x, origin_y) in enumerate(pollen_origins):
+            phase = (frame_index + particle_index * 3) % FRAME_COUNT
+            x = origin_x + ((phase * 2 + particle_index) % 10) - 5
+            y = origin_y - phase * 2
+            colour = (235, 220, 145) if particle_index % 2 else (211, 232, 164)
+            draw.rectangle((x, y, x + 1, y + 1), fill=colour)
+
+        frame_path = FRAME_DIR / f"outdoor-{frame_index:02d}.png"
+        image.save(frame_path, optimize=True)
+        frames.append(image)
+
+    frames[0].save(GIF, save_all=True, append_images=frames[1:], duration=150, loop=0, disposal=2)
+
+    # A compact contact sheet makes it easy to spot overlay leaks at a glance.
+    preview = Image.new("RGB", (WIDTH, HEIGHT // 2), (24, 18, 14))
+    for index in range(5):
+        thumb = frames[index * 2].resize((WIDTH // 5, HEIGHT // 2), Image.Resampling.NEAREST)
+        preview.paste(thumb, (index * WIDTH // 5, 0))
+    preview.save(PREVIEW, optimize=True)
+
+    changed_counts = []
+    base_array = np.asarray(base)
+    for frame in frames:
+        changed_counts.append(int(np.any(np.asarray(frame) != base_array, axis=2).sum()))
+    print(f"base={BASE} size={base.size} palette={len(base.getcolors(WIDTH * HEIGHT) or [])}")
+    print(f"frames={len(frames)} changed_pixels={min(changed_counts)}..{max(changed_counts)}")
+    print(f"gif={GIF} preview={PREVIEW}")
+
+
+if __name__ == "__main__":
+    main()

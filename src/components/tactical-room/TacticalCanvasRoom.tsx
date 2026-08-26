@@ -16,10 +16,12 @@ interface TacticalCanvasRoomProps {
 }
 
 type Direction = 'down' | 'left' | 'right' | 'up';
+type MapId = 'indoor' | 'outdoor';
 type Rect = { x1: number; y1: number; x2: number; y2: number };
 type Room = Rect & { name: string };
 type Interactable = { id: string; x: number; y: number; radius: number; label: string; message: string };
 type Occluder = { id: string; x: number; y: number; width: number; height: number; baseline: number; through: boolean };
+type NpcSpot = { id: string; x: number; y: number };
 
 const VIEW_WIDTH = 800;
 const VIEW_HEIGHT = 600;
@@ -47,16 +49,71 @@ const WALK_SPEED = 148;
 const NAV_GRID = 8;
 const CAMPUS_FRAME_COUNT = 10;
 const CAMPUS_FRAME_DURATION = 150;
+const OUTDOOR_FRAME_COUNT = 10;
+const OUTDOOR_FRAME_DURATION = 150;
 
 const COMMAND_TABLE = { x: 753, y: 522, radius: 190 };
 
-const NPCS = [
+const INDOOR_NPCS: NpcSpot[] = [
   { id: 'james', x: 350, y: 300 },
   { id: 'enjidiren', x: 1110, y: 300 },
   { id: 'miria', x: 350, y: 530 },
   { id: 'george', x: 1130, y: 600 },
   { id: 'theresa', x: 640, y: 830 },
   { id: 'nuying', x: 880, y: 830 },
+];
+
+// Every responder owns one authored outdoor station on an open path or plaza.
+// The currently controlled responder is filtered out at render time, so a
+// character can never appear twice after a roster switch.
+const OUTDOOR_NPC_SPOTS: NpcSpot[] = [
+  { id: 'eric', x: 748, y: 430 }, { id: 'james', x: 628, y: 410 },
+  { id: 'miria', x: 856, y: 410 }, { id: 'nuying', x: 538, y: 478 },
+  { id: 'george', x: 956, y: 478 }, { id: 'tony', x: 612, y: 510 },
+  { id: 'santi', x: 878, y: 510 }, { id: 'rose', x: 650, y: 588 },
+  { id: 'rinda', x: 840, y: 588 }, { id: 'yanto', x: 742, y: 648 },
+  { id: 'theresa', x: 410, y: 395 }, { id: 'jesfer_normal', x: 1000, y: 365 },
+  { id: 'jesfer_clown', x: 490, y: 610 }, { id: 'alex', x: 1012, y: 618 },
+  { id: 'andri', x: 310, y: 690 }, { id: 'budi', x: 1190, y: 642 },
+  { id: 'christ', x: 220, y: 670 }, { id: 'dzuky', x: 980, y: 738 },
+  { id: 'enjidiren', x: 550, y: 748 }, { id: 'fanisa', x: 948, y: 752 },
+  { id: 'helina', x: 620, y: 790 }, { id: 'lemma', x: 868, y: 790 },
+  { id: 'melinda', x: 780, y: 760 }, { id: 'olimar', x: 1370, y: 850 },
+  { id: 'wilson_model', x: 410, y: 560 }, { id: 'yuki', x: 1180, y: 600 },
+];
+
+const OUTDOOR_SPAWN = { x: 748, y: 342 };
+const INDOOR_EXIT = { x: 752, y: 958, radius: 55 };
+const OUTDOOR_HALL_DOOR = { x: 748, y: 312, radius: 74 };
+
+const OUTDOOR_ROOMS: Room[] = [
+  { name: 'Incident Command Hall', x1: 545, y1: 40, x2: 970, y2: 340 },
+  { name: 'Creekside Lodge', x1: 70, y1: 70, x2: 400, y2: 380 },
+  { name: 'Network Relay Yard', x1: 1080, y1: 45, x2: 1440, y2: 355 },
+  { name: 'Responder Cottage', x1: 60, y1: 430, x2: 390, y2: 720 },
+  { name: 'Training House', x1: 1050, y1: 340, x2: 1445, y2: 650 },
+  { name: 'Tool Workshop', x1: 250, y1: 680, x2: 610, y2: 990 },
+  { name: 'Oakheart Greenhouse', x1: 970, y1: 650, x2: 1380, y2: 990 },
+  { name: 'Command Plaza', x1: 520, y1: 335, x2: 990, y2: 720 },
+];
+
+const OUTDOOR_RECT_BLOCKERS: Rect[] = [
+  { x1: 0, y1: 0, x2: 1536, y2: 42 }, { x1: 0, y1: 982, x2: 1536, y2: 1024 },
+  { x1: 0, y1: 0, x2: 46, y2: 1024 }, { x1: 1490, y1: 0, x2: 1536, y2: 1024 },
+  { x1: 86, y1: 110, x2: 390, y2: 330 },
+  { x1: 558, y1: 52, x2: 956, y2: 286 },
+  { x1: 1122, y1: 86, x2: 1414, y2: 302 },
+  { x1: 1048, y1: 352, x2: 1402, y2: 552 },
+  { x1: 96, y1: 458, x2: 362, y2: 654 },
+  { x1: 272, y1: 714, x2: 566, y2: 944 },
+  { x1: 1018, y1: 682, x2: 1320, y2: 918 },
+  { x1: 130, y1: 716, x2: 278, y2: 926 },
+];
+
+const OUTDOOR_ELLIPSE_BLOCKERS = [
+  { x: 757, y: 904, rx: 205, ry: 105 },
+  { x: 430, y: 170, rx: 68, ry: 220 },
+  { x: 112, y: 720, rx: 85, ry: 250 },
 ];
 
 const ROOMS: Room[] = [
@@ -80,10 +137,19 @@ const INTERACTABLES: Interactable[] = [
   { id: 'coffee', x: 1166, y: 800, radius: 78, label: 'Brew coffee', message: 'Pantry: +1 focus. The incident is still serious, but now it smells better.' },
 ];
 
+const OUTDOOR_INTERACTABLES: Interactable[] = [
+  { id: 'enter-hall', x: OUTDOOR_HALL_DOOR.x, y: OUTDOOR_HALL_DOOR.y, radius: OUTDOOR_HALL_DOOR.radius, label: 'Enter Incident Command Hall', message: 'Entering the indoor operations floor.' },
+  { id: 'greenhouse', x: 1168, y: 932, radius: 82, label: 'Inspect greenhouse', message: 'The greenhouse supports botanical monitoring and remains a decorative campus landmark.' },
+  { id: 'relay', x: 1274, y: 320, radius: 72, label: 'Check network relay', message: 'Outdoor relay: telemetry uplink stable.' },
+  { id: 'workshop', x: 420, y: 950, radius: 74, label: 'Visit tool workshop', message: 'Workshop interior is reserved for the next expansion.' },
+  { id: 'lodge', x: 250, y: 340, radius: 74, label: 'Visit creekside lodge', message: 'Lodge interior is reserved for the next expansion.' },
+];
+
 const directionRow: Record<Direction, number> = { down: 0, left: 1, right: 2, up: 3 };
 const clamp = (value: number, minimum: number, maximum: number) => Math.max(minimum, Math.min(maximum, value));
 const inside = (x: number, y: number, rect: Rect) => x >= rect.x1 && x <= rect.x2 && y >= rect.y1 && y <= rect.y2;
 const getRoomName = ({ x, y }: TacticalPosition) => ROOMS.find((room) => inside(x, y, room))?.name ?? 'Oakheart Corridor';
+const getOutdoorRoomName = ({ x, y }: TacticalPosition) => OUTDOOR_ROOMS.find((room) => inside(x, y, room))?.name ?? 'Oakheart Trail';
 
 // Walkability comes straight from the generated mask (tools/build_campus_layout.py),
 // so the collision shape is exactly the floor that is drawn.
@@ -97,17 +163,26 @@ const isWalkable = (x: number, y: number) => {
   return collisionMask[py * WORLD_WIDTH + px] === 1;
 };
 
-const isBlocked = (x: number, y: number) => {
+const isOutdoorBlocked = (x: number, y: number) => {
+  const footY = y + FOOT_OFFSET_Y;
+  for (const [dx, dy] of FOOT_PROBES) {
+    const probeX = x + dx * FOOT_RADIUS_X;
+    const probeY = footY + dy * FOOT_RADIUS_Y;
+    if (OUTDOOR_RECT_BLOCKERS.some((blocker) => inside(probeX, probeY, blocker))) return true;
+    if (OUTDOOR_ELLIPSE_BLOCKERS.some((blocker) => {
+      const nx = (probeX - blocker.x) / blocker.rx;
+      const ny = (probeY - blocker.y) / blocker.ry;
+      return nx * nx + ny * ny <= 1;
+    })) return true;
+  }
+  return false;
+};
+
+const isBlocked = (map: MapId, x: number, y: number) => {
+  if (map === 'outdoor') return isOutdoorBlocked(x, y);
   const footY = y + FOOT_OFFSET_Y;
   for (const [dx, dy] of FOOT_PROBES) {
     if (!isWalkable(x + dx * FOOT_RADIUS_X, footY + dy * FOOT_RADIUS_Y)) return true;
-  }
-  // Crew members take up space too - just enough that you bump into them
-  // instead of standing inside them.
-  for (const npc of NPCS) {
-    const offsetX = (x - npc.x) / NPC_RADIUS_X;
-    const offsetY = (footY - npc.y - FOOT_OFFSET_Y) / NPC_RADIUS_Y;
-    if (offsetX * offsetX + offsetY * offsetY < 1) return true;
   }
   return false;
 };
@@ -115,7 +190,7 @@ const isBlocked = (x: number, y: number) => {
 const gridKey = (x: number, y: number) => `${x},${y}`;
 const gridPoint = (x: number, y: number): TacticalPosition => ({ x: x * NAV_GRID, y: y * NAV_GRID });
 
-const nearestOpenGridPoint = (point: TacticalPosition) => {
+const nearestOpenGridPoint = (map: MapId, point: TacticalPosition) => {
   const centerX = Math.round(point.x / NAV_GRID);
   const centerY = Math.round(point.y / NAV_GRID);
   for (let radius = 0; radius <= 14; radius += 1) {
@@ -123,7 +198,7 @@ const nearestOpenGridPoint = (point: TacticalPosition) => {
       for (let x = centerX - radius; x <= centerX + radius; x += 1) {
         if (Math.max(Math.abs(x - centerX), Math.abs(y - centerY)) !== radius && radius !== 0) continue;
         const world = gridPoint(x, y);
-        if (!isBlocked(world.x, world.y)) return { x, y };
+        if (!isBlocked(map, world.x, world.y)) return { x, y };
       }
     }
   }
@@ -149,10 +224,10 @@ const simplifyPath = (points: TacticalPosition[]) => {
   return result;
 };
 
-const findPath = (start: TacticalPosition, goal: TacticalPosition) => {
-  if (isBlocked(goal.x, goal.y)) return [];
-  const startGrid = nearestOpenGridPoint(start);
-  const goalGrid = nearestOpenGridPoint(goal);
+const findPath = (map: MapId, start: TacticalPosition, goal: TacticalPosition) => {
+  if (isBlocked(map, goal.x, goal.y)) return [];
+  const startGrid = nearestOpenGridPoint(map, start);
+  const goalGrid = nearestOpenGridPoint(map, goal);
   if (!startGrid || !goalGrid) return [];
 
   const startKey = gridKey(startGrid.x, startGrid.y);
@@ -192,11 +267,11 @@ const findPath = (start: TacticalPosition, goal: TacticalPosition) => {
     for (const direction of directions) {
       const next = { x: current.x + direction.x, y: current.y + direction.y };
       const world = gridPoint(next.x, next.y);
-      if (isBlocked(world.x, world.y)) continue;
+      if (isBlocked(map, world.x, world.y)) continue;
       if (direction.x !== 0 && direction.y !== 0) {
         const horizontal = gridPoint(current.x + direction.x, current.y);
         const vertical = gridPoint(current.x, current.y + direction.y);
-        if (isBlocked(horizontal.x, horizontal.y) || isBlocked(vertical.x, vertical.y)) continue;
+        if (isBlocked(map, horizontal.x, horizontal.y) || isBlocked(map, vertical.x, vertical.y)) continue;
       }
       const nextKey = gridKey(next.x, next.y);
       const tentativeScore = current.g + direction.cost;
@@ -255,9 +330,10 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const assetsRef = useRef<{
     interiors: HTMLImageElement[];
+    outdoors: HTMLImageElement[];
     sprites: Record<string, HTMLImageElement>;
     occluderMask: HTMLImageElement | null;
-  }>({ interiors: [], sprites: {}, occluderMask: null });
+  }>({ interiors: [], outdoors: [], sprites: {}, occluderMask: null });
   const occluderLayerRef = useRef<HTMLCanvasElement | null>(null);
   const occluderFrameRef = useRef(-1);
   const spriteBufferRef = useRef<HTMLCanvasElement | null>(null);
@@ -273,7 +349,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const nearbyInteractableRef = useRef<Interactable | null>(null);
   const interactionBurstRef = useRef<{ x: number; y: number; until: number } | null>(null);
   const noteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeMapRef = useRef<MapId>('indoor');
   const [assetsReady, setAssetsReady] = useState(false);
+  const [activeMap, setActiveMap] = useState<MapId>('indoor');
   const [playerPos, setPlayerPos] = useState<TacticalPosition>(positionRef.current);
   const [activeRoom, setActiveRoom] = useState('Arrival Hall');
   const [proximityRadius, setProximityRadius] = useState(170);
@@ -283,6 +361,22 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const [interactionNote, setInteractionNote] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
+  const changeMap = useCallback((nextMap: MapId) => {
+    activeMapRef.current = nextMap;
+    setActiveMap(nextMap);
+    positionRef.current = nextMap === 'outdoor' ? { ...OUTDOOR_SPAWN } : { x: SPAWN.x, y: SPAWN.y };
+    cameraRef.current = {
+      x: clamp(positionRef.current.x - VIEW_WIDTH / 2, 0, WORLD_WIDTH - VIEW_WIDTH),
+      y: clamp(positionRef.current.y - VIEW_HEIGHT / 2, 0, WORLD_HEIGHT - VIEW_HEIGHT),
+    };
+    targetRef.current = null;
+    pathRef.current = [];
+    clickTargetRef.current = null;
+    nearbyInteractableRef.current = null;
+    setNearbyInteractable(null);
+    setInteractionNote(nextMap === 'outdoor' ? 'Outdoor campus loaded.' : 'Incident Command Hall loaded.');
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     const pending: Promise<unknown>[] = [];
@@ -290,6 +384,12 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       pending.push(
         loadImage(`/game-assets/campus-loop-frames/campus-${String(index).padStart(2, '0')}.png`)
           .then((image) => { assetsRef.current.interiors[index] = image; }),
+      );
+    }
+    for (let index = 0; index < OUTDOOR_FRAME_COUNT; index += 1) {
+      pending.push(
+        loadImage(`/game-assets/outdoor-loop-frames/outdoor-${String(index).padStart(2, '0')}.png`)
+          .then((image) => { assetsRef.current.outdoors[index] = image; }),
       );
     }
     pending.push(loadImage('/game-assets/campus-occluder.png').then((image) => {
@@ -320,6 +420,14 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       if (key === 'e' && nearbyInteractableRef.current) {
         event.preventDefault();
         const item = nearbyInteractableRef.current;
+        if (item.id === 'exit-campus') {
+          changeMap('outdoor');
+          return;
+        }
+        if (item.id === 'enter-hall') {
+          changeMap('indoor');
+          return;
+        }
         setInteractionNote(item.message);
         interactionBurstRef.current = { x: item.x, y: item.y, until: performance.now() + 1200 };
         if (noteTimerRef.current) clearTimeout(noteTimerRef.current);
@@ -334,10 +442,12 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       window.removeEventListener('keyup', keyUp);
       if (noteTimerRef.current) clearTimeout(noteTimerRef.current);
     };
-  }, []);
+  }, [changeMap]);
 
   useEffect(() => {
-    const nearby = NPCS.map((responder) => {
+    const mapNpcs = (activeMap === 'outdoor' ? OUTDOOR_NPC_SPOTS : INDOOR_NPCS)
+      .filter((responder) => responder.id !== selectedAvatar.id);
+    const nearby = mapNpcs.map((responder) => {
       const char = RESPONDER_ROSTER.find((candidate) => candidate.id === responder.id);
       if (!char) return null;
       const distance = Math.hypot(playerPos.x - responder.x, playerPos.y - responder.y);
@@ -345,7 +455,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       return { char, distance: Math.round(distance), volume: Number(volume.toFixed(2)) };
     }).filter(Boolean) as { char: CharacterProfile; distance: number; volume: number }[];
     onProximityChange(nearby);
-  }, [isPodiumBroadcasting, onProximityChange, playerPos, proximityRadius]);
+  }, [activeMap, isPodiumBroadcasting, onProximityChange, playerPos, proximityRadius, selectedAvatar.id]);
 
   const ensureBuffers = useCallback(() => {
     if (!occluderLayerRef.current) {
@@ -450,7 +560,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       context.restore();
     };
 
-    const drawNpc = (npc: typeof NPCS[number], now: number, index: number) => {
+    const drawNpc = (npc: NpcSpot, now: number, index: number) => {
       const sheet = assetsRef.current.sprites[npc.id];
       if (!sheet?.complete || !sheet.naturalWidth) return;
       const bob = Math.round(Math.sin(now / 620 + index) * 1);
@@ -459,10 +569,13 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     };
 
     const render = (now: number) => {
+      const currentMap = activeMapRef.current;
+      const currentNpcs = (currentMap === 'outdoor' ? OUTDOOR_NPC_SPOTS : INDOOR_NPCS)
+        .filter((npc) => npc.id !== selectedAvatar.id);
       const delta = Math.min(0.04, (now - previousTime) / 1000);
       previousTime = now;
-      if (isBlocked(positionRef.current.x, positionRef.current.y)) {
-        const safeGridPoint = nearestOpenGridPoint(positionRef.current);
+      if (isBlocked(currentMap, positionRef.current.x, positionRef.current.y)) {
+        const safeGridPoint = nearestOpenGridPoint(currentMap, positionRef.current);
         if (safeGridPoint) positionRef.current = gridPoint(safeGridPoint.x, safeGridPoint.y);
       }
       let dx = 0;
@@ -493,15 +606,15 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         const current = positionRef.current;
         let nextX = current.x;
         let nextY = current.y;
-        if (!isBlocked(current.x + stepX, current.y)) nextX += stepX;
-        if (!isBlocked(nextX, current.y + stepY)) nextY += stepY;
+        if (!isBlocked(currentMap, current.x + stepX, current.y)) nextX += stepX;
+        if (!isBlocked(currentMap, nextX, current.y + stepY)) nextY += stepY;
         positionRef.current = { x: nextX, y: nextY };
         stepPhaseRef.current += Math.hypot(nextX - current.x, nextY - current.y);
       } else {
         stepPhaseRef.current = 0;
       }
 
-      const atCommandTable = Math.hypot(
+      const atCommandTable = currentMap === 'indoor' && Math.hypot(
         positionRef.current.x - COMMAND_TABLE.x,
         positionRef.current.y - COMMAND_TABLE.y,
       ) < COMMAND_TABLE.radius;
@@ -517,8 +630,14 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       if (hudAccumulator > 0.1) {
         hudAccumulator = 0;
         setPlayerPos({ ...positionRef.current });
-        setActiveRoom(getRoomName(positionRef.current));
-        const nearest = INTERACTABLES
+        setActiveRoom(currentMap === 'outdoor' ? getOutdoorRoomName(positionRef.current) : getRoomName(positionRef.current));
+        const mapInteractables = currentMap === 'outdoor'
+          ? OUTDOOR_INTERACTABLES
+          : [...INTERACTABLES, {
+            id: 'exit-campus', x: INDOOR_EXIT.x, y: INDOOR_EXIT.y, radius: INDOOR_EXIT.radius,
+            label: 'Exit to outdoor campus', message: 'Leaving the command hall.',
+          }];
+        const nearest = mapInteractables
           .map((item) => ({ item, distance: Math.hypot(positionRef.current.x - item.x, positionRef.current.y - item.y) }))
           .filter(({ item, distance }) => distance <= item.radius)
           .sort((a, b) => a.distance - b.distance)[0]?.item ?? null;
@@ -536,10 +655,13 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       const cameraY = Math.round(cameraRef.current.y);
       context.translate(-cameraX, -cameraY);
       const campusFrame = Math.floor(now / CAMPUS_FRAME_DURATION) % CAMPUS_FRAME_COUNT;
-      const interior = assetsRef.current.interiors[campusFrame];
-      if (interior?.complete) {
-        context.drawImage(interior, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-        refreshOccluderLayer(campusFrame, interior);
+      const outdoorFrame = Math.floor(now / OUTDOOR_FRAME_DURATION) % OUTDOOR_FRAME_COUNT;
+      const background = currentMap === 'outdoor'
+        ? assetsRef.current.outdoors[outdoorFrame]
+        : assetsRef.current.interiors[campusFrame];
+      if (background?.complete) {
+        context.drawImage(background, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        if (currentMap === 'indoor') refreshOccluderLayer(campusFrame, background);
       }
 
       if (showMesh) {
@@ -560,13 +682,13 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       const view = { x1: cameraX, y1: cameraY, x2: cameraX + VIEW_WIDTH, y2: cameraY + VIEW_HEIGHT };
 
       const depthQueue: { baseline: number; draw: () => void }[] = [];
-      NPCS.forEach((npc, index) => {
+      currentNpcs.forEach((npc, index) => {
         depthQueue.push({ baseline: npc.y, draw: () => drawNpc(npc, now, index) });
       });
 
       const occluderLayer = occluderLayerRef.current;
       let hiddenByFurniture = false;
-      if (occluderLayer && occluderFrameRef.current >= 0) {
+      if (currentMap === 'indoor' && occluderLayer && occluderFrameRef.current >= 0) {
         const playerBox = {
           x1: position.x - 16,
           y1: position.y - SPRITE_ANCHOR_Y + 6,
@@ -633,7 +755,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       context.restore();
 
       const daylight = (Math.sin(now / 5200) + 1) / 2;
-      context.fillStyle = `rgba(246, 164, 78, ${0.025 + daylight * 0.025})`;
+      context.fillStyle = currentMap === 'outdoor'
+        ? `rgba(255, 226, 138, ${0.01 + daylight * 0.018})`
+        : `rgba(246, 164, 78, ${0.025 + daylight * 0.025})`;
       context.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
       const vignette = context.createRadialGradient(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 220, VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 510);
       vignette.addColorStop(0, 'rgba(18, 10, 8, 0)');
@@ -655,21 +779,26 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       x: cameraRef.current.x + ((event.clientX - rect.left) / rect.width) * VIEW_WIDTH,
       y: cameraRef.current.y + ((event.clientY - rect.top) / rect.height) * VIEW_HEIGHT,
     };
-    const clickedNpc = NPCS.find((npc) => Math.hypot(worldTarget.x - npc.x, worldTarget.y - npc.y) < 34);
+    const map = activeMapRef.current;
+    const mapNpcs = (map === 'outdoor' ? OUTDOOR_NPC_SPOTS : INDOOR_NPCS)
+      .filter((npc) => npc.id !== selectedAvatar.id);
+    const clickedNpc = mapNpcs.find((npc) => Math.hypot(worldTarget.x - npc.x, worldTarget.y - npc.y) < 34);
     if (clickedNpc) {
       const character = RESPONDER_ROSTER.find((candidate) => candidate.id === clickedNpc.id);
       if (character) onAvatarSelect(character);
       return;
     }
-    if (!isBlocked(worldTarget.x, worldTarget.y)) {
-      const route = findPath(positionRef.current, worldTarget);
+    if (!isBlocked(map, worldTarget.x, worldTarget.y)) {
+      const route = findPath(map, positionRef.current, worldTarget);
       pathRef.current = route;
       targetRef.current = pathRef.current.shift() ?? null;
       clickTargetRef.current = targetRef.current ? worldTarget : null;
     }
   };
 
-  const nearbyCount = NPCS.filter((npc) => Math.hypot(playerPos.x - npc.x, playerPos.y - npc.y) <= proximityRadius).length;
+  const nearbyCount = (activeMap === 'outdoor' ? OUTDOOR_NPC_SPOTS : INDOOR_NPCS)
+    .filter((npc) => npc.id !== selectedAvatar.id)
+    .filter((npc) => Math.hypot(playerPos.x - npc.x, playerPos.y - npc.y) <= proximityRadius).length;
 
   return (
     <section className="game-window overflow-hidden">
@@ -678,7 +807,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
           <div className="pixel-crest"><Leaf className="h-5 w-5" /></div>
           <div className="min-w-0">
             <p className="game-eyebrow">OPSWARD CAMPUS · MORNING SHIFT</p>
-            <h2 className="truncate text-lg font-black tracking-tight text-[#4a2418]">Oakheart Operations Campus</h2>
+            <h2 className="truncate text-lg font-black tracking-tight text-[#4a2418]">{activeMap === 'outdoor' ? 'Oakheart Outdoor Campus' : 'Oakheart Operations Hall'}</h2>
           </div>
         </div>
         <div className="hidden items-center gap-2 md:flex">
@@ -691,6 +820,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         <div className="game-hud-block min-w-0"><MapPin className="h-4 w-4 text-[#b56a2e]" /><div className="min-w-0"><span className="block text-[9px] font-bold uppercase tracking-[.15em] text-[#9b6a45]">Current room</span><strong className="block truncate text-xs text-[#50301f]">{activeRoom}</strong></div></div>
         <div className="game-hud-block hidden sm:flex"><Users className="h-4 w-4 text-[#628858]" /><div><span className="block text-[9px] font-bold uppercase tracking-[.15em] text-[#9b6a45]">Nearby crew</span><strong className="block text-xs text-[#50301f]">{nearbyCount} responders</strong></div></div>
         <div className="ml-auto flex items-center gap-2">
+          <button className="game-icon-button" onClick={() => changeMap(activeMap === 'indoor' ? 'outdoor' : 'indoor')} title={activeMap === 'indoor' ? 'Fast travel to outdoor campus' : 'Return to Operations Hall'}><MapPin className="h-4 w-4" /></button>
           <button className={`game-icon-button ${isEditorOpen ? 'is-active' : ''}`} onClick={() => setIsEditorOpen(true)} title="Open Visual Drag & Drop Collider Editor"><Layers className="h-4 w-4" /></button>
           <button className={`game-icon-button ${showMesh ? 'is-active' : ''}`} onClick={() => setShowMesh((value) => !value)} title="Toggle proximity mesh"><Headphones className="h-4 w-4" /></button>
           <button className={`game-icon-button ${isMuted ? 'is-danger' : ''}`} onClick={() => setIsMuted((value) => !value)} title="Toggle microphone">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
@@ -700,7 +830,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       <div className="game-canvas-wrap">
         {!assetsReady && <div className="absolute inset-0 z-10 grid place-items-center bg-[#2b1814] text-sm font-bold text-[#f5d78f]"><span><Sparkles className="mr-2 inline h-4 w-4 animate-pulse" />Preparing the campus…</span></div>}
         <canvas ref={canvasRef} width={VIEW_WIDTH} height={VIEW_HEIGHT} onClick={handleCanvasClick} className="block h-full w-full cursor-crosshair" aria-label="Interactive multi-room pixel-art OpsWArd campus" />
-        <div className="game-quest-card"><span className="game-eyebrow">TODAY&apos;S PRIORITY</span><strong>Stabilize payment gateway</strong><span>Explore the campus and meet the response crew</span></div>
+        <div className="game-quest-card"><span className="game-eyebrow">TODAY&apos;S PRIORITY</span><strong>Stabilize payment gateway</strong><span>{activeMap === 'outdoor' ? 'Meet the full response crew · visit the greenhouse' : 'Reach the south exit to explore outdoors'}</span></div>
         {nearbyInteractable && <div className="game-interaction-prompt"><kbd>E</kbd><span>{nearbyInteractable.label}</span></div>}
         {interactionNote && <div className="game-interaction-note">{interactionNote}</div>}
         {isPodiumBroadcasting && <div className="game-broadcast-toast"><Radio className="h-3.5 w-3.5" /> Central table broadcast active</div>}
