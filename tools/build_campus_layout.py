@@ -36,6 +36,7 @@ WORLD_WIDTH, WORLD_HEIGHT = 1536, 1024
 FLOORS: list[tuple[int, int, int, int]] = [
     # Server Vault
     (58, 240, 405, 336),
+    (370, 170, 440, 336),
     # Security Watch
     (88, 378, 400, 622),
     # Archive Library, plus the east aisle running up beside the shelves
@@ -52,7 +53,7 @@ FLOORS: list[tuple[int, int, int, int]] = [
     (490, 636, 1012, 890),
     (620, 890, 884, 966),
     # Doorway thresholds where the dividing wall is only a few pixels thick
-    (400, 200, 448, 288),
+    (380, 168, 480, 290),
     (396, 470, 448, 600),
     (1056, 240, 1098, 312),
     (1056, 480, 1100, 600),
