@@ -433,20 +433,20 @@
     },
     {
       "id": "nw-pod-wall",
-      "x": 482,
-      "y": 244,
-      "width": 16,
-      "height": 182,
-      "baseline": 426,
+      "x": 480,
+      "y": 240,
+      "width": 28,
+      "height": 190,
+      "baseline": 430,
       "through": false
     },
     {
       "id": "ne-pod-wall",
-      "x": 1000,
-      "y": 244,
-      "width": 18,
-      "height": 182,
-      "baseline": 426,
+      "x": 996,
+      "y": 240,
+      "width": 28,
+      "height": 190,
+      "baseline": 430,
       "through": false
     },
     {
@@ -514,38 +514,119 @@
     },
     {
       "id": "command-table",
-      "x": 626,
-      "y": 408,
-      "width": 252,
-      "height": 218,
+      "x": 630,
+      "y": 405,
+      "width": 245,
+      "height": 225,
+      "baseline": 630,
+      "through": false
+    },
+    {
+      "id": "command-chair-top",
+      "x": 720,
+      "y": 388,
+      "width": 65,
+      "height": 57,
+      "baseline": 445,
+      "through": false
+    },
+    {
+      "id": "command-chair-bottom",
+      "x": 720,
+      "y": 590,
+      "width": 65,
+      "height": 60,
+      "baseline": 650,
+      "through": false
+    },
+    {
+      "id": "command-chair-left",
+      "x": 614,
+      "y": 490,
+      "width": 56,
+      "height": 58,
+      "baseline": 548,
+      "through": false
+    },
+    {
+      "id": "command-chair-right",
+      "x": 835,
+      "y": 490,
+      "width": 55,
+      "height": 58,
+      "baseline": 548,
+      "through": false
+    },
+    {
+      "id": "command-chair-nw",
+      "x": 638,
+      "y": 418,
+      "width": 60,
+      "height": 64,
+      "baseline": 482,
+      "through": false
+    },
+    {
+      "id": "command-chair-ne",
+      "x": 806,
+      "y": 418,
+      "width": 62,
+      "height": 64,
+      "baseline": 482,
+      "through": false
+    },
+    {
+      "id": "command-chair-sw",
+      "x": 638,
+      "y": 558,
+      "width": 60,
+      "height": 68,
       "baseline": 626,
       "through": false
     },
     {
+      "id": "command-chair-se",
+      "x": 806,
+      "y": 558,
+      "width": 69,
+      "height": 77,
+      "baseline": 635,
+      "through": false
+    },
+    {
       "id": "sw-pod-wall",
-      "x": 482,
+      "x": 478,
       "y": 574,
-      "width": 18,
-      "height": 212,
-      "baseline": 786,
+      "width": 30,
+      "height": 236,
+      "baseline": 810,
       "through": false
     },
     {
-      "id": "sw-pod-bottom-wall",
-      "x": 484,
-      "y": 746,
-      "width": 110,
-      "height": 42,
-      "baseline": 788,
+      "id": "sw-pod-left-post",
+      "x": 478,
+      "y": 740,
+      "width": 32,
+      "height": 70,
+      "baseline": 810,
       "through": false
     },
     {
-      "id": "sw-pod-bottom-post",
+      "id": "sw-pod-top-rail",
+      "x": 506,
+      "y": 744,
+      "width": 54,
+      "height": 24,
+      "baseline": 768,
+      "through": false
+    },
+    {
+      "id": "sw-pod-right-post",
       "x": 558,
-      "y": 746,
-      "width": 36,
-      "height": 58,
-      "baseline": 804,
+      "y": 744,
+      "width": 46,
+      "height": 66,
+      "baseline": 810,
       "through": false
     },
     {
@@ -577,29 +658,47 @@
     },
     {
       "id": "se-pod-wall",
-      "x": 998,
+      "x": 996,
       "y": 574,
-      "width": 18,
-      "height": 212,
+      "width": 28,
+      "height": 236,
+      "baseline": 810,
+      "through": false
+    },
+    {
+      "id": "se-pod-left-post",
+      "x": 896,
+      "y": 744,
+      "width": 50,
+      "height": 66,
+      "baseline": 810,
+      "through": false
+    },
+    {
+      "id": "se-pod-top-rail",
+      "x": 942,
+      "y": 744,
+      "width": 54,
+      "height": 24,
+      "baseline": 768,
+      "through": false
+    },
+    {
+      "id": "se-pod-right-post",
+      "x": 994,
+      "y": 730,
+      "width": 30,
+      "height": 80,
+      "baseline": 810,
+      "through": false
+    },
+    {
+      "id": "pantry-west-wall",
+      "x": 1000,
+      "y": 636,
+      "width": 44,
+      "height": 150,
       "baseline": 786,
-      "through": false
-    },
-    {
-      "id": "se-pod-bottom-wall",
-      "x": 906,
-      "y": 746,
-      "width": 110,
-      "height": 42,
-      "baseline": 788,
-      "through": false
-    },
-    {
-      "id": "se-pod-bottom-post",
-      "x": 906,
-      "y": 746,
-      "width": 36,
-      "height": 58,
-      "baseline": 804,
       "through": false
     },
     {
