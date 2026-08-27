@@ -93,6 +93,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
+  const [outdoorTiles, setOutdoorTiles] = useState<HTMLImageElement[]>([]);
 
   const [currentMapId, setCurrentMapId] = useState<WorldMapId>(mapId || 'indoor');
 
@@ -171,9 +172,23 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadColliders(currentMapId);
-      const img = new Image();
-      img.src = MAP_BACKGROUNDS[currentMapId] || MAP_BACKGROUNDS.indoor;
-      img.onload = () => setBgImage(img);
+      if (currentMapId === 'outdoor') {
+        const tiles: HTMLImageElement[] = [];
+        for (let tileY = 0; tileY < 2; tileY += 1) {
+          for (let tileX = 0; tileX < 2; tileX += 1) {
+            const img = new Image();
+            img.src = `/game-assets/outdoor-v11-seamless-tiles/outdoor-${tileX}-${tileY}.png`;
+            tiles.push(img);
+          }
+        }
+        setOutdoorTiles(tiles);
+        setBgImage(null);
+      } else {
+        const img = new Image();
+        img.src = MAP_BACKGROUNDS[currentMapId] || MAP_BACKGROUNDS.indoor;
+        img.onload = () => setBgImage(img);
+        setOutdoorTiles([]);
+      }
     }
   }, [isOpen, loadColliders, currentMapId]);
 
@@ -481,15 +496,22 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
-    // 1. Background Image with dimmer
-    if (bgImage?.complete) {
-      ctx.globalAlpha = bgDimmer;
+    // 1. Background Image or 4-Tile Grid with dimmer
+    ctx.globalAlpha = bgDimmer;
+    if (currentMapId === 'outdoor' && outdoorTiles.length === 4) {
+      outdoorTiles.forEach((tile, index) => {
+        if (!tile?.complete || !tile.naturalWidth) return;
+        const tileX = index % 2;
+        const tileY = Math.floor(index / 2);
+        ctx.drawImage(tile, tileX * 768, tileY * 512, 768, 512);
+      });
+    } else if (bgImage?.complete) {
       ctx.drawImage(bgImage, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-      ctx.globalAlpha = 1.0;
     } else {
       ctx.fillStyle = '#140f0d';
       ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     }
+    ctx.globalAlpha = 1.0;
 
     // 2. Grid lines
     if (showGridLines) {

@@ -30,7 +30,7 @@ export const EXTRA_MAP_COLLIDERS: Partial<Record<WorldMapId, ColliderMap>> = {
 
 export const MAP_BACKGROUNDS: Record<WorldMapId, string> = {
   indoor: '/game-assets/campus-loop-frames/campus-00.png',
-  outdoor: '/game-assets/opsward-outdoor-v5.png',
+  outdoor: '/game-assets/outdoor-v11-connected-preview.png',
   greenhouse: '/game-assets/greenhouse-interior-v1.png',
   relay: '/game-assets/relay-interior-v1.png',
   workshop: '/game-assets/workshop-interior-v1.png',
