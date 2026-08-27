@@ -44,11 +44,11 @@ const NPC_RADIUS_X = 13;
 const NPC_RADIUS_Y = 9;
 
 const SPRITE_SIZE = 64;
-const OUTDOOR_SPRITE_DRAW_SIZE = 64;
-const INTERIOR_SPRITE_DRAW_SIZE = 64;
-const SPRITE_ANCHOR_RATIO = 52 / 64;
-const getSpriteMetrics = (_map: WorldMapId) => {
-  return { drawSize: 64, anchorY: 52 };
+const getMapZoom = (map: WorldMapId) => (map === 'outdoor' ? 1.45 : 1.0);
+const getSpriteMetrics = (map: WorldMapId) => {
+  const drawSize = map === 'outdoor' ? 44 : 64;
+  const anchorY = map === 'outdoor' ? 36 : 52;
+  return { drawSize, anchorY };
 };
 const WALK_SPEED = 148;
 const NAV_GRID = 8;
@@ -362,12 +362,15 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     const previousMap = activeMapRef.current;
     activeMapRef.current = nextMap;
     setActiveMap(nextMap);
+    const zoom = getMapZoom(nextMap);
+    const visibleWidth = VIEW_WIDTH / zoom;
+    const visibleHeight = VIEW_HEIGHT / zoom;
     positionRef.current = nextMap === 'outdoor' && previousMap !== 'outdoor'
       ? { ...(OUTDOOR_RETURN_SPAWNS[previousMap] ?? OUTDOOR_SPAWN) }
       : { ...MAP_SPAWNS[nextMap] };
     cameraRef.current = {
-      x: clamp(positionRef.current.x - VIEW_WIDTH / 2, 0, WORLD_WIDTH - VIEW_WIDTH),
-      y: clamp(positionRef.current.y - VIEW_HEIGHT / 2, 0, WORLD_HEIGHT - VIEW_HEIGHT),
+      x: clamp(positionRef.current.x - visibleWidth / 2, 0, WORLD_WIDTH - visibleWidth),
+      y: clamp(positionRef.current.y - visibleHeight / 2, 0, WORLD_HEIGHT - visibleHeight),
     };
     targetRef.current = null;
     pathRef.current = [];
@@ -656,9 +659,13 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         positionRef.current.y - COMMAND_TABLE.y,
       ) < COMMAND_TABLE.radius;
       if (atCommandTable !== isPodiumBroadcasting) onTogglePodium(atCommandTable);
+      const zoom = getMapZoom(currentMap);
+      const visibleWidth = VIEW_WIDTH / zoom;
+      const visibleHeight = VIEW_HEIGHT / zoom;
+
       const desiredCamera = {
-        x: clamp(positionRef.current.x - VIEW_WIDTH / 2, 0, WORLD_WIDTH - VIEW_WIDTH),
-        y: clamp(positionRef.current.y - VIEW_HEIGHT / 2, 0, WORLD_HEIGHT - VIEW_HEIGHT),
+        x: clamp(positionRef.current.x - visibleWidth / 2, 0, WORLD_WIDTH - visibleWidth),
+        y: clamp(positionRef.current.y - visibleHeight / 2, 0, WORLD_HEIGHT - visibleHeight),
       };
       cameraRef.current.x += (desiredCamera.x - cameraRef.current.x) * Math.min(1, delta * 7);
       cameraRef.current.y += (desiredCamera.y - cameraRef.current.y) * Math.min(1, delta * 7);
@@ -690,6 +697,8 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       context.fillStyle = '#15100e';
       context.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
       context.save();
+      // Apply map zoom and camera translation
+      context.scale(zoom, zoom);
       const cameraX = Math.round(cameraRef.current.x);
       const cameraY = Math.round(cameraRef.current.y);
       context.translate(-cameraX, -cameraY);
@@ -728,7 +737,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       const playerSheet = assetsRef.current.sprites[selectedAvatar.id];
       const playerFrame = movingRef.current ? Math.floor(stepPhaseRef.current / 22) % 4 : 0;
       const playerRow = directionRow[directionRef.current];
-      const view = { x1: cameraX, y1: cameraY, x2: cameraX + VIEW_WIDTH, y2: cameraY + VIEW_HEIGHT };
+      const view = { x1: cameraX, y1: cameraY, x2: cameraX + visibleWidth, y2: cameraY + visibleHeight };
 
       const depthQueue: { baseline: number; draw: () => void }[] = [];
       currentNpcs.forEach((npc, index) => {
@@ -826,11 +835,14 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const worldTarget = {
-      x: cameraRef.current.x + ((event.clientX - rect.left) / rect.width) * VIEW_WIDTH,
-      y: cameraRef.current.y + ((event.clientY - rect.top) / rect.height) * VIEW_HEIGHT,
-    };
     const map = activeMapRef.current;
+    const zoom = getMapZoom(map);
+    const visibleWidth = VIEW_WIDTH / zoom;
+    const visibleHeight = VIEW_HEIGHT / zoom;
+    const worldTarget = {
+      x: cameraRef.current.x + ((event.clientX - rect.left) / rect.width) * visibleWidth,
+      y: cameraRef.current.y + ((event.clientY - rect.top) / rect.height) * visibleHeight,
+    };
     const mapNpcs = MAP_NPCS[map]
       .filter((npc) => npc.id !== selectedAvatar.id);
     const clickedNpc = mapNpcs.find((npc) => Math.hypot(worldTarget.x - npc.x, worldTarget.y - npc.y) < 26);
@@ -850,7 +862,6 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const nearbyCount = MAP_NPCS[activeMap]
     .filter((npc) => npc.id !== selectedAvatar.id)
     .filter((npc) => Math.hypot(playerPos.x - npc.x, playerPos.y - npc.y) <= proximityRadius).length;
-
   return (
     <section className="game-window overflow-hidden">
       <div className="game-window__header">
