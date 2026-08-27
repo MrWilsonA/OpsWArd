@@ -50,14 +50,9 @@ const getSpriteMetrics = (map: WorldMapId) => {
   if (map === 'outdoor') {
     return { drawSize: 44, anchorY: 36 };
   }
-  if (map === 'indoor') {
-    return { drawSize: 64, anchorY: 52 };
-  }
-  // For satellite interior facilities (greenhouse, relay, workshop, lodge, cottage)
-  // where the background artwork furniture was drawn at a larger pixel scale,
-  // the character sprite is drawn at 138px so the character-to-furniture and character-to-plant
-  // ratio matches the Central Operations Hall precisely!
-  return { drawSize: 138, anchorY: 112 };
+  // All interior rooms (Operations Hall, greenhouse, relay, workshop, lodge, cottage)
+  // use the exact same Operations Hall benchmark standard (64px sprite, anchor 52, 1.0x zoom).
+  return { drawSize: 64, anchorY: 52 };
 };
 const WALK_SPEED = 148;
 const NAV_GRID = 8;
