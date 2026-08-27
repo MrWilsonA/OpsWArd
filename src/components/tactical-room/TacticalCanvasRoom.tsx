@@ -747,9 +747,11 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       const inThroughZone = currentColliders.obstacles.some(
         (ob) => ob.through && pointInsideCollider(position.x, position.y + FOOT_OFFSET_Y, ob)
       );
-      let hiddenByFurniture = inThroughZone;
-
+      // ONLY UNGU (through: true / Walk-Behind) obstacles are drawn as foreground layer on top of player!
+      // MERAH (through: false) obstacles ONLY block movement and are NOT drawn in depthQueue.
       currentColliders.obstacles.forEach((object) => {
+        if (!object.through) return;
+
         const x1 = object.x1;
         const y1 = object.y1;
         const width = object.x2 - object.x1;
@@ -759,8 +761,6 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         if (x1 > view.x2 || x1 + width < view.x1) return;
         if (y1 > view.y2 || y1 + height < view.y1) return;
 
-        // Both RED (solid) and PURPLE (walk-behind) are drawn at their baseline depth!
-        // When player is behind it (player.y <= baseline), the obstacle graphics are drawn OVER the player!
         depthQueue.push({
           baseline,
           draw: () => {
