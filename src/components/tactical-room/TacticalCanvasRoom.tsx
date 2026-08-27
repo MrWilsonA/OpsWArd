@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { CharacterProfile, RESPONDER_ROSTER } from '@/lib/characters';
 import { TacticalPosition } from '@/types/opsward';
 import campusLayout from '@/lib/campus-layout.json';
+import campusColliders from '@/lib/campus-colliders.json';
 import { EXTRA_MAP_COLLIDERS, MAP_BACKGROUNDS, WorldMapId } from '@/lib/world-maps';
 import { Clock3, Coffee, Gamepad2, Headphones, Layers, Leaf, MapPin, Radio, Sparkles, Users, Volume2, VolumeX } from 'lucide-react';
 import { ColliderEditorModal } from './ColliderEditorModal';
@@ -27,7 +28,6 @@ const VIEW_WIDTH = 800;
 const VIEW_HEIGHT = 600;
 const WORLD_WIDTH = campusLayout.world.width;
 const WORLD_HEIGHT = campusLayout.world.height;
-const OCCLUDERS = campusLayout.occluders as Occluder[];
 const SPAWN = campusLayout.spawn;
 
 // The avatar collides with an ellipse under its feet rather than a circle around
@@ -44,9 +44,6 @@ const NPC_RADIUS_X = 13;
 const NPC_RADIUS_Y = 9;
 
 const SPRITE_SIZE = 64;
-// Exterior landmarks are drawn at a broader world scale, so characters stay
-// compact there. Interior rooms use the original 64px presentation so desks,
-// seats, and characters keep their earlier proportions.
 const OUTDOOR_SPRITE_DRAW_SIZE = 44;
 const INTERIOR_SPRITE_DRAW_SIZE = 64;
 const SPRITE_ANCHOR_RATIO = 36 / 44;
@@ -68,85 +65,54 @@ const INDOOR_NPCS: NpcSpot[] = [
   { id: 'enjidiren', x: 1110, y: 300 },
   { id: 'miria', x: 350, y: 530 },
   { id: 'george', x: 1130, y: 600 },
-  { id: 'theresa', x: 640, y: 830 },
-  { id: 'nuying', x: 880, y: 830 },
+  { id: 'teresa', x: 750, y: 440 },
+  { id: 'kai', x: 780, y: 540 },
 ];
 
-const OUTDOOR_NPC_SPOTS: NpcSpot[] = [
-  { id: 'alex', x: 570, y: 365 },
-  { id: 'rose', x: 990, y: 320 },
-  { id: 'andri', x: 580, y: 620 },
-  { id: 'melinda', x: 1040, y: 630 },
-  { id: 'yuki', x: 790, y: 630 },
-];
-
-const GREENHOUSE_NPCS: NpcSpot[] = [
-  { id: 'fanisa', x: 755, y: 330 }, { id: 'lemma', x: 1110, y: 565 }, { id: 'helina', x: 470, y: 685 },
-];
-const RELAY_NPCS: NpcSpot[] = [
-  { id: 'rinda', x: 755, y: 300 }, { id: 'tony', x: 1000, y: 690 }, { id: 'santi', x: 710, y: 820 },
-];
-const WORKSHOP_NPCS: NpcSpot[] = [
-  { id: 'christ', x: 500, y: 310 }, { id: 'budi', x: 1015, y: 610 }, { id: 'dzuky', x: 760, y: 880 },
-];
-const LODGE_NPCS: NpcSpot[] = [
-  { id: 'eric', x: 760, y: 525 }, { id: 'yanto', x: 500, y: 560 }, { id: 'jesfer_normal', x: 1010, y: 560 },
-];
-const COTTAGE_NPCS: NpcSpot[] = [
-  { id: 'jesfer_clown', x: 745, y: 380 }, { id: 'olimar', x: 480, y: 700 }, { id: 'wilson_model', x: 925, y: 760 },
+const OUTDOOR_NPCS: NpcSpot[] = [
+  { id: 'james', x: 730, y: 420 },
+  { id: 'enjidiren', x: 1180, y: 360 },
+  { id: 'miria', x: 860, y: 880 },
+  { id: 'george', x: 1190, y: 690 },
+  { id: 'teresa', x: 390, y: 880 },
+  { id: 'kai', x: 1190, y: 910 },
 ];
 
 const MAP_NPCS: Record<WorldMapId, NpcSpot[]> = {
   indoor: INDOOR_NPCS,
-  outdoor: OUTDOOR_NPC_SPOTS,
-  greenhouse: GREENHOUSE_NPCS,
-  relay: RELAY_NPCS,
-  workshop: WORKSHOP_NPCS,
-  lodge: LODGE_NPCS,
-  cottage: COTTAGE_NPCS,
+  outdoor: OUTDOOR_NPCS,
+  greenhouse: [{ id: 'miria', x: 750, y: 300 }],
+  relay: [{ id: 'enjidiren', x: 920, y: 440 }],
+  workshop: [{ id: 'teresa', x: 980, y: 430 }],
+  lodge: [{ id: 'george', x: 730, y: 520 }],
+  cottage: [{ id: 'kai', x: 1300, y: 360 }],
 };
-
-const OUTDOOR_SPAWN = { x: 335, y: 330 };
-const INDOOR_EXIT = { x: 752, y: 958, radius: 55 };
-const OUTDOOR_HALL_DOOR = { x: 335, y: 305, radius: 76 };
-const INTERIOR_EXIT = { x: 768, y: 930, radius: 78 };
-
-const MAP_SPAWNS: Record<WorldMapId, TacticalPosition> = {
-  indoor: { x: SPAWN.x, y: SPAWN.y },
-  outdoor: OUTDOOR_SPAWN,
-  greenhouse: { x: 768, y: 880 }, relay: { x: 768, y: 880 },
-  workshop: { x: 768, y: 880 }, lodge: { x: 768, y: 900 }, cottage: { x: 768, y: 885 },
-};
-
-const OUTDOOR_RETURN_SPAWNS: Partial<Record<WorldMapId, TacticalPosition>> = {
-  indoor: { x: 335, y: 330 }, lodge: { x: 1250, y: 640 }, relay: { x: 1225, y: 325 },
-  cottage: { x: 1240, y: 945 }, workshop: { x: 340, y: 915 }, greenhouse: { x: 810, y: 920 },
-};
-
-const OUTDOOR_ROOMS: Room[] = [
-  { name: 'Incident Command Courtyard', x1: 150, y1: 40, x2: 650, y2: 425 },
-  { name: 'Network Relay Trail', x1: 1040, y1: 45, x2: 1450, y2: 350 },
-  { name: 'Raft Lodge Woodland', x1: 1070, y1: 350, x2: 1430, y2: 660 },
-  { name: 'Saga Workshop Yard', x1: 190, y1: 620, x2: 560, y2: 970 },
-  { name: 'Oakheart Greenhouse Garden', x1: 620, y1: 610, x2: 990, y2: 980 },
-  { name: 'DLQ Cottage Trail', x1: 1060, y1: 680, x2: 1440, y2: 980 },
-  { name: 'Oakheart Loop Trail', x1: 250, y1: 280, x2: 1190, y2: 760 },
-];
 
 const ROOMS: Room[] = [
-  { name: 'Server Vault', x1: 20, y1: 20, x2: 430, y2: 360 },
-  { name: 'Security Watch', x1: 20, y1: 362, x2: 430, y2: 648 },
-  { name: 'Archive Library', x1: 20, y1: 650, x2: 500, y2: 995 },
-  { name: 'Data Garden', x1: 1056, y1: 20, x2: 1520, y2: 358 },
-  { name: 'Briefing Room', x1: 1056, y1: 360, x2: 1520, y2: 652 },
-  { name: 'Pantry Lounge', x1: 1004, y1: 654, x2: 1520, y2: 995 },
-  { name: 'North Command', x1: 440, y1: 20, x2: 1056, y2: 210 },
-  { name: 'Arrival Hall', x1: 490, y1: 700, x2: 1012, y2: 1005 },
-  { name: 'Central Operations', x1: 440, y1: 186, x2: 1065, y2: 700 },
+  { name: 'Server Vault', x1: 0, y1: 0, x2: 440, y2: 340 },
+  { name: 'Security Watch', x1: 0, y1: 341, x2: 440, y2: 660 },
+  { name: 'Archive Library', x1: 0, y1: 661, x2: 480, y2: 1024 },
+  { name: 'Data Garden', x1: 1060, y1: 0, x2: 1536, y2: 340 },
+  { name: 'Briefing Room', x1: 1060, y1: 341, x2: 1536, y2: 660 },
+  { name: 'Pantry Lounge', x1: 1000, y1: 661, x2: 1536, y2: 1024 },
+  { name: 'Central Operations Hall', x1: 441, y1: 0, x2: 1059, y2: 1024 },
 ];
 
+const OUTDOOR_ROOMS: Room[] = [
+  { name: 'Oakheart Campus Courtyard', x1: 520, y1: 360, x2: 980, y2: 660 },
+  { name: 'SFU Relay Trail', x1: 980, y1: 140, x2: 1500, y2: 440 },
+  { name: 'Raft Consensus Forest', x1: 980, y1: 450, x2: 1500, y2: 740 },
+  { name: 'DLQ Replay Orchard', x1: 980, y1: 750, x2: 1500, y2: 1020 },
+  { name: 'Saga Workshop Clearing', x1: 100, y1: 660, x2: 560, y2: 1020 },
+  { name: 'Greenhouse Grove', x1: 560, y1: 680, x2: 980, y2: 1020 },
+];
+
+const INDOOR_EXIT = { x: 752, y: 930, radius: 82 };
+const OUTDOOR_HALL_DOOR = { x: 740, y: 395, radius: 84 };
+const INTERIOR_EXIT = { x: 768, y: 880, radius: 88 };
+
 const INTERACTABLES: Interactable[] = [
-  { id: 'server', x: 230, y: 250, radius: 78, label: 'Inspect server telemetry', message: 'Server Vault: replication healthy · one warm standby node.' },
+  { id: 'vault', x: 250, y: 250, radius: 80, label: 'Inspect primary ledger vault', message: 'Vault integrity 100%. Node hash verified across 3 mirrors.' },
   { id: 'security', x: 205, y: 520, radius: 76, label: 'Review security feed', message: 'Security Watch: no anomalous access in the last 15 minutes.' },
   { id: 'garden', x: 1255, y: 240, radius: 88, label: 'Tend data garden', message: 'Data Garden: humidity calibrated. The ferns look unusually cheerful.' },
   { id: 'meeting', x: 1288, y: 540, radius: 86, label: 'Open briefing notes', message: 'Briefing Room: payment-gateway response plan is ready for review.' },
@@ -198,19 +164,22 @@ const inside = (x: number, y: number, rect: Rect) => x >= rect.x1 && x <= rect.x
 const getRoomName = ({ x, y }: TacticalPosition) => ROOMS.find((room) => inside(x, y, room))?.name ?? 'Oakheart Corridor';
 const getOutdoorRoomName = ({ x, y }: TacticalPosition) => OUTDOOR_ROOMS.find((room) => inside(x, y, room))?.name ?? 'Oakheart Trail';
 
-// Walkability comes straight from the generated mask (tools/build_campus_layout.py),
-// so the collision shape is exactly the floor that is drawn.
-let collisionMask: Uint8Array | null = null;
+interface ColliderBox {
+  id?: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  shape?: string;
+  through?: boolean;
+}
 
-const isWalkable = (x: number, y: number) => {
-  if (!collisionMask) return false;
-  const px = Math.round(x);
-  const py = Math.round(y);
-  if (px < 0 || py < 0 || px >= WORLD_WIDTH || py >= WORLD_HEIGHT) return false;
-  return collisionMask[py * WORLD_WIDTH + px] === 1;
-};
+interface MapCollidersData {
+  floors: ColliderBox[];
+  obstacles: ColliderBox[];
+}
 
-const pointInsideCollider = (x: number, y: number, collider: { x1: number; y1: number; x2: number; y2: number; shape?: string }) => {
+const pointInsideCollider = (x: number, y: number, collider: ColliderBox) => {
   if (collider.shape !== 'ellipse') return inside(x, y, collider);
   const centerX = (collider.x1 + collider.x2) / 2;
   const centerY = (collider.y1 + collider.y2) / 2;
@@ -221,24 +190,33 @@ const pointInsideCollider = (x: number, y: number, collider: { x1: number; y1: n
   return nx * nx + ny * ny <= 1;
 };
 
-const isExtraMapBlocked = (map: Exclude<WorldMapId, 'indoor'>, x: number, y: number) => {
-  const data = EXTRA_MAP_COLLIDERS[map];
-  if (!data) return true;
-  const footY = y + FOOT_OFFSET_Y;
-  for (const [dx, dy] of FOOT_PROBES) {
-    const probeX = x + dx * FOOT_RADIUS_X;
-    const probeY = footY + dy * FOOT_RADIUS_Y;
-    if (!data.floors.some((floor) => pointInsideCollider(probeX, probeY, floor))) return true;
-    if (data.obstacles.some((obstacle) => pointInsideCollider(probeX, probeY, obstacle))) return true;
-  }
-  return false;
+// Global in-memory map colliders cache for instant sync across maps
+const liveCollidersCache: Record<WorldMapId, MapCollidersData> = {
+  indoor: (campusColliders as any) || { floors: [], obstacles: [] },
+  outdoor: (EXTRA_MAP_COLLIDERS.outdoor as any) || { floors: [], obstacles: [] },
+  greenhouse: (EXTRA_MAP_COLLIDERS.greenhouse as any) || { floors: [], obstacles: [] },
+  relay: (EXTRA_MAP_COLLIDERS.relay as any) || { floors: [], obstacles: [] },
+  workshop: (EXTRA_MAP_COLLIDERS.workshop as any) || { floors: [], obstacles: [] },
+  lodge: (EXTRA_MAP_COLLIDERS.lodge as any) || { floors: [], obstacles: [] },
+  cottage: (EXTRA_MAP_COLLIDERS.cottage as any) || { floors: [], obstacles: [] },
 };
 
 const isBlocked = (map: WorldMapId, x: number, y: number) => {
-  if (map !== 'indoor') return isExtraMapBlocked(map, x, y);
+  const data = liveCollidersCache[map] || { floors: [], obstacles: [] };
   const footY = y + FOOT_OFFSET_Y;
+
   for (const [dx, dy] of FOOT_PROBES) {
-    if (!isWalkable(x + dx * FOOT_RADIUS_X, footY + dy * FOOT_RADIUS_Y)) return true;
+    const probeX = x + dx * FOOT_RADIUS_X;
+    const probeY = footY + dy * FOOT_RADIUS_Y;
+
+    // 1. Must be on Walkable Floor (HIJAU) or Walk-Behind Corridor (UNGU)
+    const onFloor = data.floors.some((f) => pointInsideCollider(probeX, probeY, f));
+    const onThroughPassage = data.obstacles.some((ob) => ob.through && pointInsideCollider(probeX, probeY, ob));
+    if (!onFloor && !onThroughPassage) return true;
+
+    // 2. Cannot intersect Solid Obstacle (MERAH)
+    const hitsSolidObstacle = data.obstacles.some((ob) => !ob.through && pointInsideCollider(probeX, probeY, ob));
+    if (hitsSolidObstacle) return true;
   }
   return false;
 };
@@ -261,84 +239,74 @@ const nearestOpenGridPoint = (map: WorldMapId, point: TacticalPosition) => {
   return null;
 };
 
-const simplifyPath = (points: TacticalPosition[]) => {
-  if (points.length < 3) return points;
-  const result = [points[0]];
-  let previousDirection = {
-    x: Math.sign(points[1].x - points[0].x),
-    y: Math.sign(points[1].y - points[0].y),
-  };
-  for (let index = 1; index < points.length - 1; index += 1) {
-    const direction = {
-      x: Math.sign(points[index + 1].x - points[index].x),
-      y: Math.sign(points[index + 1].y - points[index].y),
-    };
-    if (direction.x !== previousDirection.x || direction.y !== previousDirection.y) result.push(points[index]);
-    previousDirection = direction;
-  }
-  result.push(points[points.length - 1]);
-  return result;
-};
+const findPath = (map: WorldMapId, startWorld: TacticalPosition, targetWorld: TacticalPosition): TacticalPosition[] => {
+  const startGrid = nearestOpenGridPoint(map, startWorld);
+  const targetGrid = nearestOpenGridPoint(map, targetWorld);
+  if (!startGrid || !targetGrid) return [];
+  if (startGrid.x === targetGrid.x && startGrid.y === targetGrid.y) return [targetWorld];
 
-const findPath = (map: WorldMapId, start: TacticalPosition, goal: TacticalPosition) => {
-  if (isBlocked(map, goal.x, goal.y)) return [];
-  const startGrid = nearestOpenGridPoint(map, start);
-  const goalGrid = nearestOpenGridPoint(map, goal);
-  if (!startGrid || !goalGrid) return [];
-
-  const startKey = gridKey(startGrid.x, startGrid.y);
-  const goalKey = gridKey(goalGrid.x, goalGrid.y);
-  const open = [{ ...startGrid, g: 0, f: Math.hypot(goalGrid.x - startGrid.x, goalGrid.y - startGrid.y) }];
-  const scores = new Map<string, number>([[startKey, 0]]);
-  const parents = new Map<string, string>();
+  type Node = { x: number; y: number; g: number; f: number; parent?: Node };
+  const open: Node[] = [{ ...startGrid, g: 0, f: Math.hypot(targetGrid.x - startGrid.x, targetGrid.y - startGrid.y) }];
   const closed = new Set<string>();
-  const directions = [
-    { x: 1, y: 0, cost: 1 }, { x: -1, y: 0, cost: 1 },
-    { x: 0, y: 1, cost: 1 }, { x: 0, y: -1, cost: 1 },
-    { x: 1, y: 1, cost: Math.SQRT2 }, { x: -1, y: 1, cost: Math.SQRT2 },
-    { x: 1, y: -1, cost: Math.SQRT2 }, { x: -1, y: -1, cost: Math.SQRT2 },
-  ];
+  const directions = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+  let iterations = 0;
 
-  for (let iteration = 0; open.length && iteration < 30000; iteration += 1) {
-    open.sort((a, b) => b.f - a.f);
-    const current = open.pop();
+  while (open.length && iterations < 900) {
+    iterations += 1;
+    open.sort((a, b) => a.f - b.f);
+    const current = open.shift();
     if (!current) break;
-    const currentKey = gridKey(current.x, current.y);
-    if (closed.has(currentKey)) continue;
-    if (currentKey === goalKey) {
-      const route: TacticalPosition[] = [gridPoint(current.x, current.y)];
-      let cursor = currentKey;
-      while (parents.has(cursor)) {
-        cursor = parents.get(cursor)!;
-        const [x, y] = cursor.split(',').map(Number);
-        route.push(gridPoint(x, y));
+    if (current.x === targetGrid.x && current.y === targetGrid.y) {
+      const path: TacticalPosition[] = [];
+      let trace: Node | undefined = current;
+      while (trace) {
+        path.unshift(gridPoint(trace.x, trace.y));
+        trace = trace.parent;
       }
-      route.reverse();
-      route.shift();
-      route.push(goal);
-      return simplifyPath(route);
+      path[0] = startWorld;
+      path[path.length - 1] = targetWorld;
+      return path.slice(1);
     }
-    closed.add(currentKey);
-
-    for (const direction of directions) {
-      const next = { x: current.x + direction.x, y: current.y + direction.y };
+    closed.add(gridKey(current.x, current.y));
+    for (const [dx, dy] of directions) {
+      const next = { x: current.x + dx, y: current.y + dy };
+      const key = gridKey(next.x, next.y);
+      if (closed.has(key)) continue;
       const world = gridPoint(next.x, next.y);
       if (isBlocked(map, world.x, world.y)) continue;
-      if (direction.x !== 0 && direction.y !== 0) {
-        const horizontal = gridPoint(current.x + direction.x, current.y);
-        const vertical = gridPoint(current.x, current.y + direction.y);
-        if (isBlocked(map, horizontal.x, horizontal.y) || isBlocked(map, vertical.x, vertical.y)) continue;
+      const tentativeScore = current.g + (dx !== 0 && dy !== 0 ? 1.414 : 1);
+      const existing = open.find((node) => node.x === next.x && node.y === next.y);
+      if (existing && tentativeScore >= existing.g) continue;
+      const heuristic = Math.hypot(targetGrid.x - next.x, targetGrid.y - next.y);
+      if (existing) {
+        existing.g = tentativeScore;
+        existing.f = tentativeScore + heuristic;
+        existing.parent = current;
+        continue;
       }
-      const nextKey = gridKey(next.x, next.y);
-      const tentativeScore = current.g + direction.cost;
-      if (tentativeScore >= (scores.get(nextKey) ?? Number.POSITIVE_INFINITY)) continue;
-      scores.set(nextKey, tentativeScore);
-      parents.set(nextKey, currentKey);
-      const heuristic = Math.hypot(goalGrid.x - next.x, goalGrid.y - next.y);
-      open.push({ ...next, g: tentativeScore, f: tentativeScore + heuristic });
+      open.push({ ...next, g: tentativeScore, f: tentativeScore + heuristic, parent: current });
     }
   }
-  return [];
+  return [targetWorld];
+};
+
+const OUTDOOR_SPAWN = { x: 335, y: 330 };
+const MAP_SPAWNS: Record<WorldMapId, TacticalPosition> = {
+  indoor: { x: SPAWN.x, y: SPAWN.y },
+  outdoor: OUTDOOR_SPAWN,
+  greenhouse: { x: 768, y: 880 },
+  relay: { x: 768, y: 880 },
+  workshop: { x: 768, y: 880 },
+  lodge: { x: 768, y: 900 },
+  cottage: { x: 768, y: 885 },
+};
+
+const OUTDOOR_RETURN_SPAWNS: Partial<Record<WorldMapId, TacticalPosition>> = {
+  indoor: { x: 335, y: 330 },
+  lodge: { x: 1250, y: 640 },
+  relay: { x: 1225, y: 325 },
+  workshop: { x: 340, y: 915 },
+  greenhouse: { x: 810, y: 920 },
 };
 
 const loadImage = (source: string) => new Promise<HTMLImageElement>((resolve) => {
@@ -347,34 +315,6 @@ const loadImage = (source: string) => new Promise<HTMLImageElement>((resolve) =>
   image.onerror = () => resolve(image);
   image.src = source;
 });
-
-const readCollisionMask = (image: HTMLImageElement) => {
-  if (!image.complete || !image.naturalWidth) return false;
-  const buffer = document.createElement('canvas');
-  buffer.width = WORLD_WIDTH;
-  buffer.height = WORLD_HEIGHT;
-  const context = buffer.getContext('2d', { willReadFrequently: true });
-  if (!context) return false;
-  context.drawImage(image, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-  const { data } = context.getImageData(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-  const mask = new Uint8Array(WORLD_WIDTH * WORLD_HEIGHT);
-  for (let index = 0; index < mask.length; index += 1) {
-    mask[index] = data[index * 4] > 127 ? 1 : 0;
-  }
-  collisionMask = mask;
-  return true;
-};
-
-// Without the mask every wall would be open, so keep retrying rather than
-// letting the room come up in a state where the avatar walks through anything.
-const loadCollisionMask = async () => {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const suffix = attempt === 0 ? '' : `?retry=${attempt}`;
-    if (readCollisionMask(await loadImage(`/game-assets/campus-collision.png${suffix}`))) return true;
-  }
-  console.error('[OpsWArd] campus-collision.png could not be read - movement stays locked.');
-  return false;
-};
 
 export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   selectedAvatar,
@@ -470,19 +410,37 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         );
       }
     });
-    pending.push(loadImage('/game-assets/campus-occluder.png').then((image) => {
-      assetsRef.current.occluderMask = image;
-    }));
-    pending.push(loadCollisionMask());
     RESPONDER_ROSTER.forEach((character) => {
       pending.push(
         loadImage(`/game-assets/characters-aligned/${character.id}-walk-4x4.png`)
           .then((image) => { assetsRef.current.sprites[character.id] = image; }),
       );
     });
-    Promise.all(pending).then(() => { if (!cancelled && collisionMask) setAssetsReady(true); });
+    Promise.all(pending).then(() => { if (!cancelled) setAssetsReady(true); });
     return () => { cancelled = true; };
   }, []);
+
+  const fetchLiveColliders = useCallback(async () => {
+    const maps: WorldMapId[] = ['indoor', 'outdoor', 'greenhouse', 'relay', 'workshop', 'lodge', 'cottage'];
+    await Promise.all(
+      maps.map(async (m) => {
+        try {
+          const res = await fetch(`/api/colliders?map=${m}`);
+          if (res.ok) {
+            const data = await res.json();
+            liveCollidersCache[m] = {
+              floors: data.floors || [],
+              obstacles: data.obstacles || [],
+            };
+          }
+        } catch {}
+      })
+    );
+  }, []);
+
+  useEffect(() => {
+    fetchLiveColliders();
+  }, [fetchLiveColliders]);
 
   useEffect(() => {
     const movementKeys = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright']);
@@ -777,7 +735,6 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       currentNpcs.forEach((npc, index) => {
         depthQueue.push({ baseline: npc.y, draw: () => drawNpc(npc, now, index) });
       });
-      let hiddenByFurniture = false;
       const { drawSize, anchorY } = getSpriteMetrics(currentMap);
       const playerBox = {
         x1: position.x - drawSize / 4,
@@ -786,41 +743,41 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         y2: position.y + 10,
       };
 
-      const mapObstacles = currentMap === 'indoor'
-        ? OCCLUDERS
-        : (EXTRA_MAP_COLLIDERS[currentMap]?.obstacles || []).map((ob) => ({
-            id: ob.id || 'obs',
-            x: ob.x1,
-            y: ob.y1,
-            width: ob.x2 - ob.x1,
-            height: ob.y2 - ob.y1,
-            baseline: ob.y2,
-            through: Boolean(ob.through),
-          }));
+      const currentColliders = liveCollidersCache[currentMap] || { floors: [], obstacles: [] };
+      const inThroughZone = currentColliders.obstacles.some(
+        (ob) => ob.through && pointInsideCollider(position.x, position.y + FOOT_OFFSET_Y, ob)
+      );
+      let hiddenByFurniture = inThroughZone;
 
-      mapObstacles.forEach((object) => {
-        if (object.x > view.x2 || object.x + object.width < view.x1) return;
-        if (object.y > view.y2 || object.y + object.height < view.y1) return;
+      currentColliders.obstacles.forEach((object) => {
+        const x1 = object.x1;
+        const y1 = object.y1;
+        const width = object.x2 - object.x1;
+        const height = object.y2 - object.y1;
+        const baseline = object.y2;
+
+        if (x1 > view.x2 || x1 + width < view.x1) return;
+        if (y1 > view.y2 || y1 + height < view.y1) return;
         if (object.through) return;
 
-        const isPlayerBehind = object.baseline > position.y;
+        const isPlayerBehind = baseline > position.y;
         const isIntersecting = (
-          object.x < playerBox.x2 && object.x + object.width > playerBox.x1 &&
-          object.y < playerBox.y2 && object.y + object.height > playerBox.y1
+          x1 < playerBox.x2 && x1 + width > playerBox.x1 &&
+          y1 < playerBox.y2 && y1 + height > playerBox.y1
         );
 
-        if (isPlayerBehind && isIntersecting) {
+        if (isPlayerBehind && (isIntersecting || inThroughZone)) {
           hiddenByFurniture = true;
         }
 
         depthQueue.push({
-          baseline: object.baseline,
+          baseline,
           draw: () => {
             if (background?.complete) {
               context.drawImage(
                 background,
-                object.x, object.y, object.width, object.height,
-                object.x, object.y, object.width, object.height,
+                x1, y1, width, height,
+                x1, y1, width, height,
               );
             }
           },
