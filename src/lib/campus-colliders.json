@@ -738,7 +738,7 @@
       "id": "sw-pod-right-post",
       "x1": 558,
       "y1": 744,
-      "x2": 604,
+      "x2": 600,
       "y2": 810,
       "shape": "rect",
       "through": false,
@@ -761,7 +761,7 @@
       "x1": 486,
       "y1": 586,
       "x2": 602,
-      "y2": 636,
+      "y2": 650,
       "shape": "rect",
       "through": false,
       "base": 0,
@@ -846,10 +846,10 @@
     },
     {
       "id": "se-planter",
-      "x1": 896,
-      "y1": 588,
-      "x2": 1016,
-      "y2": 636,
+      "x1": 898,
+      "y1": 586,
+      "x2": 996,
+      "y2": 648,
       "shape": "rect",
       "through": false,
       "base": 0,
@@ -902,7 +902,7 @@
     {
       "id": "vault-cabinet-copy",
       "x1": 344,
-      "y1": 170,
+      "y1": 174,
       "x2": 368,
       "y2": 248,
       "shape": "rect",
@@ -1089,6 +1089,46 @@
       "shape": "rect",
       "through": false,
       "base": 0,
+      "occlude": true
+    },
+    {
+      "id": "obs-7536",
+      "x1": 814,
+      "y1": 638,
+      "x2": 898,
+      "y2": 648,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "obs-7536-copy",
+      "x1": 870,
+      "y1": 630,
+      "x2": 896,
+      "y2": 638,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "obs-7536-copy",
+      "x1": 602,
+      "y1": 636,
+      "x2": 686,
+      "y2": 646,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "obs-7536-copy-copy",
+      "x1": 600,
+      "y1": 630,
+      "x2": 620,
+      "y2": 638,
+      "shape": "rect",
+      "through": true,
       "occlude": true
     }
   ]

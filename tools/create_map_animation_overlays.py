@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "public" / "game-assets"
-OUT = ASSETS / "map-animation-overlays-v2"
+OUT = ASSETS / "map-animation-overlays-v3"
 FRAME_COUNT = 10
 
 MAPS = {
@@ -57,11 +57,11 @@ def save_overlay(path: Path, rgb: np.ndarray, changed: np.ndarray) -> None:
 
 
 def build_outdoor() -> None:
-    base = np.asarray(Image.open(ASSETS / "opsward-outdoor-v4.png").convert("RGB"))
+    base = np.asarray(Image.open(ASSETS / "opsward-outdoor-v5.png").convert("RGB"))
     target = OUT / "outdoor"
     target.mkdir(parents=True, exist_ok=True)
     for index in range(FRAME_COUNT):
-        frame = np.asarray(Image.open(ASSETS / "outdoor-v4-loop-frames" / f"outdoor-{index:02d}.png").convert("RGB"))
+        frame = np.asarray(Image.open(ASSETS / "outdoor-v5-loop-frames" / f"outdoor-{index:02d}.png").convert("RGB"))
         changed = np.any(frame != base, axis=2)
         save_overlay(target / f"{index:02d}.png", frame, changed)
 

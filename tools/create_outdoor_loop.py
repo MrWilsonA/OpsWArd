@@ -12,12 +12,12 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "public" / "game-assets"
-SOURCE = ASSETS / "opsward-outdoor-v4-source.png"
-BASE = ASSETS / "opsward-outdoor-v4.png"
-FRAME_DIR = ASSETS / "outdoor-v4-loop-frames"
-TILE_DIR = ASSETS / "outdoor-v4-hires-tiles"
-GIF = ASSETS / "opsward-outdoor-v4-loop.gif"
-PREVIEW = ASSETS / "opsward-outdoor-v4-loop-preview.png"
+SOURCE = ASSETS / "opsward-outdoor-v5-source.png"
+BASE = ASSETS / "opsward-outdoor-v5.png"
+FRAME_DIR = ASSETS / "outdoor-v5-loop-frames"
+TILE_DIR = ASSETS / "outdoor-v5-hires-tiles"
+GIF = ASSETS / "opsward-outdoor-v5-loop.gif"
+PREVIEW = ASSETS / "opsward-outdoor-v5-loop-preview.png"
 
 WIDTH, HEIGHT = 1536, 1024
 FRAME_COUNT = 10
@@ -43,12 +43,14 @@ def main() -> None:
     TILE_DIR.mkdir(parents=True, exist_ok=True)
     base = normalize_source()
     base.save(BASE, optimize=True)
-    # Four streamable quadrants form a 9216x6144 physical map. The renderer
-    # draws them back at logical size with smoothing disabled.
+    # Keep four independent 2x backing-resolution quadrants. Each tile maps
+    # exactly to one quarter of the world on a 2x canvas; unlike the previous
+    # 6x intermediates, the browser never has to crush an oversized texture
+    # back down before displaying it.
     for tile_y in range(2):
         for tile_x in range(2):
             tile = base.crop((tile_x * 768, tile_y * 512, (tile_x + 1) * 768, (tile_y + 1) * 512))
-            tile = tile.resize((4608, 3072), Image.Resampling.NEAREST)
+            tile = tile.resize((1536, 1024), Image.Resampling.NEAREST)
             tile.save(TILE_DIR / f"outdoor-{tile_x}-{tile_y}.png", optimize=True)
     pixels = np.asarray(base).copy()
     red, green, blue = pixels[..., 0], pixels[..., 1], pixels[..., 2]

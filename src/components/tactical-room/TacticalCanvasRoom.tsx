@@ -26,6 +26,7 @@ type NpcSpot = { id: string; x: number; y: number };
 
 const VIEW_WIDTH = 800;
 const VIEW_HEIGHT = 600;
+const RENDER_SCALE = 2;
 const WORLD_WIDTH = campusLayout.world.width;
 const WORLD_HEIGHT = campusLayout.world.height;
 const SPAWN = campusLayout.spawn;
@@ -44,10 +45,10 @@ const NPC_RADIUS_X = 13;
 const NPC_RADIUS_Y = 9;
 
 const SPRITE_SIZE = 64;
-const getMapZoom = (map: WorldMapId) => (map === 'outdoor' ? 1.45 : 1.0);
+const getMapZoom = (map: WorldMapId) => (map === 'indoor' ? 1.0 : 1.45);
 const getSpriteMetrics = (map: WorldMapId) => {
-  const drawSize = map === 'outdoor' ? 44 : 64;
-  const anchorY = map === 'outdoor' ? 36 : 52;
+  const drawSize = map === 'indoor' ? 64 : 44;
+  const anchorY = map === 'indoor' ? 52 : 36;
   return { drawSize, anchorY };
 };
 const WALK_SPEED = 148;
@@ -69,12 +70,12 @@ const INDOOR_NPCS: NpcSpot[] = [
 ];
 
 const OUTDOOR_NPCS: NpcSpot[] = [
-  { id: 'james', x: 730, y: 420 },
-  { id: 'enjidiren', x: 1180, y: 360 },
-  { id: 'miria', x: 860, y: 880 },
-  { id: 'george', x: 1190, y: 690 },
-  { id: 'teresa', x: 390, y: 880 },
-  { id: 'kai', x: 1190, y: 910 },
+  { id: 'james', x: 680, y: 390 },      // Paved courtyard outside Incident Command Hall
+  { id: 'enjidiren', x: 1170, y: 330 }, // Open stone path outside SFU Relay
+  { id: 'george', x: 1190, y: 640 },    // Open porch/walkway in front of Raft Lodge
+  { id: 'kai', x: 1180, y: 930 },       // Open lawn path in front of DLQ Cottage
+  { id: 'teresa', x: 380, y: 900 },     // Open plaza in front of Saga Workshop
+  { id: 'miria', x: 760, y: 910 },      // Open garden pathway in front of Greenhouse
 ];
 
 const MAP_NPCS: Record<WorldMapId, NpcSpot[]> = {
@@ -327,10 +328,11 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     interiors: HTMLImageElement[];
     mapImages: Partial<Record<WorldMapId, HTMLImageElement>>;
     outdoorTiles: HTMLImageElement[];
+    outdoorTileOverlays: HTMLImageElement[][];
     overlays: Partial<Record<WorldMapId, HTMLImageElement[]>>;
     sprites: Record<string, HTMLImageElement>;
     occluderMask: HTMLImageElement | null;
-  }>({ interiors: [], mapImages: {}, outdoorTiles: [], overlays: {}, sprites: {}, occluderMask: null });
+  }>({ interiors: [], mapImages: {}, outdoorTiles: [], outdoorTileOverlays: [[], [], [], []], overlays: {}, sprites: {}, occluderMask: null });
   const occluderLayerRef = useRef<HTMLCanvasElement | null>(null);
   const occluderFrameRef = useRef(-1);
   const spriteBufferRef = useRef<HTMLCanvasElement | null>(null);
@@ -393,9 +395,15 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       for (let tileX = 0; tileX < 2; tileX += 1) {
         const tileIndex = tileY * 2 + tileX;
         pending.push(
-          loadImage(`/game-assets/outdoor-v4-hires-tiles/outdoor-${tileX}-${tileY}.png`)
+          loadImage(`/game-assets/outdoor-v10-seamless-tiles/outdoor-${tileX}-${tileY}.png`)
             .then((image) => { assetsRef.current.outdoorTiles[tileIndex] = image; }),
         );
+        for (let frame = 0; frame < OUTDOOR_FRAME_COUNT; frame += 1) {
+          pending.push(
+            loadImage(`/game-assets/outdoor-v10-hires-overlays/outdoor-${tileX}-${tileY}-${String(frame).padStart(2, '0')}.png`)
+              .then((image) => { assetsRef.current.outdoorTileOverlays[tileIndex][frame] = image; }),
+          );
+        }
       }
     }
     (['greenhouse', 'relay', 'workshop', 'lodge', 'cottage'] as WorldMapId[]).forEach((mapId) => {
@@ -407,7 +415,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       assetsRef.current.overlays[mapId] = [];
       for (let index = 0; index < OUTDOOR_FRAME_COUNT; index += 1) {
         pending.push(
-          loadImage(`/game-assets/map-animation-overlays-v2/${mapId}/${String(index).padStart(2, '0')}.png`)
+          loadImage(`/game-assets/map-animation-overlays-v3/${mapId}/${String(index).padStart(2, '0')}.png`)
             .then((image) => { assetsRef.current.overlays[mapId]![index] = image; }),
         );
       }
@@ -570,8 +578,6 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       bufferContext.imageSmoothingEnabled = false;
       bufferContext.globalCompositeOperation = 'source-over';
       bufferContext.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-      // The roster art is punchier than the campus painting, so pull the
-      // saturation and brightness back until the two read as one style.
       bufferContext.filter = 'saturate(0.88) brightness(0.95) contrast(1.1)';
       bufferContext.drawImage(
         sheet,
@@ -693,6 +699,11 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         }
       }
 
+      // Render at 2x backing resolution while retaining the same logical
+      // camera and gameplay coordinates. CSS only scales down, never enlarges
+      // an 800x600 bitmap, so exterior tiles remain crisp on wide screens.
+      context.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
+      context.imageSmoothingEnabled = false;
       context.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
       context.fillStyle = '#15100e';
       context.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
@@ -708,19 +719,30 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         ? assetsRef.current.interiors[campusFrame]
         : assetsRef.current.mapImages[currentMap];
       if (currentMap === 'outdoor') {
+        context.save();
+        context.filter = 'saturate(0.86) contrast(0.9) brightness(0.95)';
         assetsRef.current.outdoorTiles.forEach((tile, index) => {
           if (!tile?.complete || !tile.naturalWidth) return;
           const tileX = index % 2;
           const tileY = Math.floor(index / 2);
           context.drawImage(tile, tileX * 768, tileY * 512, 768, 512);
         });
+        context.restore();
       } else if (background?.complete) {
         context.drawImage(background, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
         if (currentMap === 'indoor') refreshOccluderLayer(campusFrame, background);
       }
       if (currentMap !== 'indoor') {
-        const overlay = assetsRef.current.overlays[currentMap]?.[outdoorFrame];
-        if (overlay?.complete && overlay.naturalWidth) context.drawImage(overlay, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        if (currentMap === 'outdoor') {
+          assetsRef.current.outdoorTileOverlays.forEach((frames, index) => {
+            const overlay = frames[outdoorFrame];
+            if (!overlay?.complete || !overlay.naturalWidth) return;
+            context.drawImage(overlay, (index % 2) * 768, Math.floor(index / 2) * 512, 768, 512);
+          });
+        } else {
+          const overlay = assetsRef.current.overlays[currentMap]?.[outdoorFrame];
+          if (overlay?.complete && overlay.naturalWidth) context.drawImage(overlay, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        }
         if (showMesh) {
           context.save();
           context.beginPath();
@@ -891,7 +913,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
 
       <div className="game-canvas-wrap">
         {!assetsReady && <div className="absolute inset-0 z-10 grid place-items-center bg-[#2b1814] text-sm font-bold text-[#f5d78f]"><span><Sparkles className="mr-2 inline h-4 w-4 animate-pulse" />Preparing the campus…</span></div>}
-        <canvas ref={canvasRef} width={VIEW_WIDTH} height={VIEW_HEIGHT} onClick={handleCanvasClick} className="block h-full w-full cursor-crosshair" aria-label="Interactive multi-room pixel-art OpsWArd campus" />
+        <canvas ref={canvasRef} width={VIEW_WIDTH * RENDER_SCALE} height={VIEW_HEIGHT * RENDER_SCALE} onClick={handleCanvasClick} className="block h-full w-full cursor-crosshair" aria-label="Interactive multi-room pixel-art OpsWArd campus" />
         <div className="game-quest-card"><span className="game-eyebrow">TODAY&apos;S PRIORITY</span><strong>Stabilize payment gateway</strong><span>{activeMap === 'outdoor' ? 'Follow the paths and enter each OpsWArd facility' : activeMap === 'indoor' ? 'Coordinate the incident from Central Operations' : 'Inspect this facility · use E at the south exit'}</span></div>
         {nearbyInteractable && <div className="game-interaction-prompt"><kbd>E</kbd><span>{nearbyInteractable.label}</span></div>}
         {interactionNote && <div className="game-interaction-note">{interactionNote}</div>}

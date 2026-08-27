@@ -489,7 +489,7 @@
       "id": "sw-pod-right-post",
       "x": 558,
       "y": 744,
-      "width": 46,
+      "width": 42,
       "height": 66,
       "baseline": 810,
       "through": false
@@ -508,8 +508,8 @@
       "x": 486,
       "y": 586,
       "width": 116,
-      "height": 50,
-      "baseline": 636,
+      "height": 64,
+      "baseline": 650,
       "through": false
     },
     {
@@ -577,11 +577,11 @@
     },
     {
       "id": "se-planter",
-      "x": 896,
-      "y": 588,
-      "width": 120,
-      "height": 48,
-      "baseline": 636,
+      "x": 898,
+      "y": 586,
+      "width": 98,
+      "height": 62,
+      "baseline": 648,
       "through": false
     },
     {
@@ -623,9 +623,9 @@
     {
       "id": "vault-cabinet-copy",
       "x": 344,
-      "y": 170,
-      "width": 24,
-      "height": 78,
+      "y": 172,
+      "width": 20,
+      "height": 76,
       "baseline": 248,
       "through": false
     },
@@ -790,6 +790,42 @@
       "height": 51,
       "baseline": 615,
       "through": false
+    },
+    {
+      "id": "obs-7536",
+      "x": 814,
+      "y": 638,
+      "width": 84,
+      "height": 10,
+      "baseline": 648,
+      "through": true
+    },
+    {
+      "id": "obs-7536-copy",
+      "x": 870,
+      "y": 630,
+      "width": 26,
+      "height": 8,
+      "baseline": 638,
+      "through": true
+    },
+    {
+      "id": "obs-7536-copy",
+      "x": 602,
+      "y": 636,
+      "width": 84,
+      "height": 10,
+      "baseline": 646,
+      "through": true
+    },
+    {
+      "id": "obs-7536-copy-copy",
+      "x": 600,
+      "y": 630,
+      "width": 20,
+      "height": 8,
+      "baseline": 638,
+      "through": true
     }
   ]
 }
