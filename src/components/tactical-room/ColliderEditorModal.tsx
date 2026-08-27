@@ -837,32 +837,32 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-2 select-none animate-in fade-in duration-150"
-      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+      style={{ fontFamily: 'var(--pixel-font), "Press Start 2P", "Courier New", monospace' }}
     >
       <div className="relative flex flex-col w-full h-full max-w-[1720px] max-h-[97vh] bg-[#110d0b] border border-amber-900/40 rounded-2xl shadow-2xl overflow-hidden text-neutral-200">
         {/* Sleek Compact Studio Header (Single Line ~46px) */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-amber-900/30 bg-[#16100e] text-xs">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-amber-900/30 bg-[#16100e] text-[9px]">
           {/* Left Title & Status */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
             <div className="p-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400">
               <Layers className="w-4 h-4" />
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-amber-100 tracking-tight">Collider Studio · {mapId}</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
+              <span className="font-bold text-[10px] text-amber-100 tracking-tight">COLLIDER STUDIO · {mapId.toUpperCase()}</span>
+              <span className="text-[7px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
                 v2.1
               </span>
             </div>
           </div>
 
           {/* Center Room Jump Buttons */}
-          <div className="hidden md:flex items-center gap-1 px-2 py-0.5 bg-black/40 border border-neutral-800 rounded-lg overflow-x-auto">
-            <span className="text-[10px] font-bold text-neutral-500 uppercase px-1">Jump:</span>
+          <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-black/40 border border-neutral-800 rounded-lg overflow-x-auto">
+            <span className="text-[8px] font-bold text-neutral-500 uppercase px-1">JUMP:</span>
             {(mapId === 'indoor' ? ROOM_SHORTCUTS : [{ name: mapId, x: 768, y: 512, color: '#f59e0b' }]).map((r) => (
               <button
                 key={r.name}
                 onClick={() => jumpTo(r.x, r.y)}
-                className="px-2 py-0.5 text-[11px] font-medium rounded hover:bg-white/10 text-neutral-300 hover:text-white transition-all flex items-center gap-1 whitespace-nowrap"
+                className="px-2 py-0.5 text-[8px] font-medium rounded hover:bg-white/10 text-neutral-300 hover:text-white transition-all flex items-center gap-1 whitespace-nowrap"
               >
                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: r.color }} />
                 {r.name}
@@ -890,35 +890,35 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
               onClick={handleUndo}
               disabled={undoStack.length === 0}
               title="Undo (Ctrl+Z)"
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-[8px] font-semibold rounded bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 transition-colors"
             >
-              <Undo2 className="w-3.5 h-3.5" /> Undo
+              <Undo2 className="w-3 h-3" /> UNDO
             </button>
             <button
               onClick={handleRedo}
               disabled={redoStack.length === 0}
               title="Redo (Ctrl+Y / Ctrl+Shift+Z)"
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-[8px] font-semibold rounded bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 disabled:opacity-30 transition-colors"
             >
-              <Redo2 className="w-3.5 h-3.5" /> Redo
+              <Redo2 className="w-3 h-3" /> REDO
             </button>
             <button
               onClick={loadColliders}
               title="Revert all unsaved changes"
-              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-[8px] font-semibold rounded bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 transition-colors"
             >
-              <RotateCcw className="w-3.5 h-3.5" /> Revert
+              <RotateCcw className="w-3 h-3" /> REVERT
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/60 transition-all disabled:opacity-50 ml-1"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[8px] font-bold rounded bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-950/60 transition-all disabled:opacity-50 ml-1"
             >
-              <Save className="w-3.5 h-3.5" /> Save & Apply
+              <Save className="w-3.5 h-3.5" /> SAVE & APPLY
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors ml-1"
+              className="p-1 text-neutral-400 hover:text-white rounded hover:bg-neutral-800 transition-colors ml-1"
             >
               <X className="w-4 h-4" />
             </button>
@@ -932,63 +932,63 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
             <button
               onClick={() => setActiveTool('select')}
               title="Select / Move / Resize (V)"
-              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
+              className={`p-2 rounded text-[8px] flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'select'
                   ? 'bg-amber-600 text-white shadow'
                   : 'text-neutral-300 hover:bg-white/10'
               }`}
             >
               <MousePointer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Select & Resize (V)</span>
+              <span className="hidden sm:inline">SELECT & RESIZE (V)</span>
             </button>
             <button
               onClick={() => setActiveTool('pan')}
               title="Pan Canvas (H / Hold Spacebar)"
-              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
+              className={`p-2 rounded text-[8px] flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'pan' || isSpaceHeld
                   ? 'bg-amber-600 text-white shadow'
                   : 'text-neutral-300 hover:bg-white/10'
               }`}
             >
               <Hand className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Pan (Space / H)</span>
+              <span className="hidden sm:inline">PAN (SPACE / H)</span>
             </button>
             <div className="h-px bg-neutral-800 my-0.5" />
             <button
               onClick={() => setActiveTool('add-floor')}
               title="Draw Walkable Floor (F)"
-              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
+              className={`p-2 rounded text-[8px] flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'add-floor'
                   ? 'bg-emerald-600 text-white shadow'
                   : 'text-emerald-400 hover:bg-emerald-500/10'
               }`}
             >
               <Square className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Draw Floor (F)</span>
+              <span className="hidden sm:inline">DRAW FLOOR (F)</span>
             </button>
             <button
               onClick={() => setActiveTool('add-solid')}
               title="Draw Solid Obstacle (O)"
-              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
+              className={`p-2 rounded text-[8px] flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'add-solid'
                   ? 'bg-rose-600 text-white shadow'
                   : 'text-rose-400 hover:bg-rose-500/10'
               }`}
             >
               <Square className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Solid Obstacle (O)</span>
+              <span className="hidden sm:inline">SOLID OBSTACLE (O)</span>
             </button>
             <button
               onClick={() => setActiveTool('add-through')}
               title="Draw Walk-Behind Scenery (T)"
-              className={`p-2 rounded-lg text-xs flex items-center gap-1.5 font-semibold transition-all ${
+              className={`p-2 rounded text-[8px] flex items-center gap-1.5 font-semibold transition-all ${
                 activeTool === 'add-through'
                   ? 'bg-purple-600 text-white shadow'
                   : 'text-purple-400 hover:bg-purple-500/10'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Walk-Behind (T)</span>
+              <span className="hidden sm:inline">WALK-BEHIND (T)</span>
             </button>
           </div>
 
