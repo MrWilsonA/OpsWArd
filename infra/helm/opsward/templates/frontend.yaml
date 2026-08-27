@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "opsward.fullname" . }}-frontend
+spec:
+  selector:
+    {{- include "opsward.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "opsward.fullname" . }}-frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "opsward.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "opsward.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          env:
+            - {name: NEXT_PUBLIC_OPSWARD_API_URL, value: "/api/v1"}
+            - {name: NEXT_PUBLIC_OPSWARD_SOCKET_URL, value: "/socket"}
+          ports: [{name: http, containerPort: {{ .Values.frontend.servicePort }}}]
+          readinessProbe: {httpGet: {path: /, port: http}, initialDelaySeconds: 10, periodSeconds: 10}
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}

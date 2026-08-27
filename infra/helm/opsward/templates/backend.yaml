@@ -1,0 +1,125 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "opsward.fullname" . }}-backend-headless
+  labels:
+    {{- include "opsward.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    {{- include "opsward.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+  ports:
+    - {name: epmd, port: 4369}
+    - {name: http, port: {{ .Values.backend.service.httpPort }}}
+    - {name: grpc, port: {{ .Values.backend.service.grpcPort }}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "opsward.fullname" . }}-backend
+  labels:
+    {{- include "opsward.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    {{- include "opsward.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+  ports:
+    - {name: http, port: 80, targetPort: http}
+    - {name: grpc, port: 50051, targetPort: grpc}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "opsward.fullname" . }}-backend
+  labels:
+    {{- include "opsward.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "opsward.fullname" . }}-backend-headless
+  replicas: {{ .Values.backend.replicaCount }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      {{- include "opsward.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "opsward.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      terminationGracePeriodSeconds: 60
+      initContainers:
+        - name: migrations
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command: ["bin/opsward", "eval", "OpsWard.Release.migrate()"]
+          env:
+            - {name: POSTGRES_PASSWORD, valueFrom: {secretKeyRef: {name: {{ include "opsward.fullname" . }}-secrets, key: postgres-password}}}
+            - name: DATABASE_URL
+              value: "ecto://{{ .Values.postgresql.username }}:$(POSTGRES_PASSWORD)@{{ include "opsward.fullname" . }}-postgresql/{{ .Values.postgresql.database }}"
+            - {name: SECRET_KEY_BASE, valueFrom: {secretKeyRef: {name: {{ include "opsward.fullname" . }}-secrets, key: secret-key-base}}}
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - {name: http, containerPort: {{ .Values.backend.service.httpPort }}}
+            - {name: grpc, containerPort: {{ .Values.backend.service.grpcPort }}}
+            - {name: epmd, containerPort: 4369}
+          env:
+            - name: POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+            - name: POD_NAMESPACE
+              valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+            - {name: PORT, value: {{ .Values.backend.service.httpPort | quote }}}
+            - {name: PHX_HOST, value: {{ .Values.ingress.host | quote }}}
+            - {name: RELEASE_DISTRIBUTION, value: "name"}
+            - name: RELEASE_NODE
+              value: "opsward@$(POD_NAME).{{ include "opsward.fullname" . }}-backend-headless.$(POD_NAMESPACE).svc.cluster.local"
+            - name: RELEASE_COOKIE
+              valueFrom: {secretKeyRef: {name: {{ include "opsward.fullname" . }}-secrets, key: release-cookie}}
+            - name: SECRET_KEY_BASE
+              valueFrom: {secretKeyRef: {name: {{ include "opsward.fullname" . }}-secrets, key: secret-key-base}}
+            - name: POSTGRES_PASSWORD
+              valueFrom: {secretKeyRef: {name: {{ include "opsward.fullname" . }}-secrets, key: postgres-password}}
+            - name: DATABASE_URL
+              value: "ecto://{{ .Values.postgresql.username }}:$(POSTGRES_PASSWORD)@{{ include "opsward.fullname" . }}-postgresql/{{ .Values.postgresql.database }}"
+            - {name: KAFKA_ENABLED, value: "true"}
+            - {name: KAFKA_BROKERS, value: "{{ include "opsward.fullname" . }}-kafka:9092"}
+            - {name: RAFT_ENABLED, value: "true"}
+            - {name: RAFT_DATA_DIR, value: "/data/raft"}
+            - name: RAFT_NODES
+              value: "opsward@{{ include "opsward.fullname" . }}-backend-0.{{ include "opsward.fullname" . }}-backend-headless.$(POD_NAMESPACE).svc.cluster.local,opsward@{{ include "opsward.fullname" . }}-backend-1.{{ include "opsward.fullname" . }}-backend-headless.$(POD_NAMESPACE).svc.cluster.local,opsward@{{ include "opsward.fullname" . }}-backend-2.{{ include "opsward.fullname" . }}-backend-headless.$(POD_NAMESPACE).svc.cluster.local"
+            - {name: GRPC_ENABLED, value: "true"}
+            - {name: GRPC_PORT, value: {{ .Values.backend.service.grpcPort | quote }}}
+            - {name: LIVEKIT_URL, value: "ws://{{ include "opsward.fullname" . }}-livekit:7880"}
+            - name: LIVEKIT_API_KEY
+              valueFrom: {secretKeyRef: {name: {{ include "opsward.fullname" . }}-secrets, key: livekit-api-key}}
+            - name: LIVEKIT_API_SECRET
+              valueFrom: {secretKeyRef: {name: {{ include "opsward.fullname" . }}-secrets, key: livekit-api-secret}}
+            - name: OPSWARD_API_KEY
+              valueFrom: {secretKeyRef: {name: {{ include "opsward.fullname" . }}-secrets, key: opsward-api-key}}
+          readinessProbe:
+            httpGet: {path: /api/v1/health, port: http}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /api/v1/health, port: http}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          volumeMounts:
+            - {name: raft-data, mountPath: /data/raft}
+  volumeClaimTemplates:
+    - metadata: {name: raft-data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- if .Values.persistence.storageClassName }}
+        storageClassName: {{ .Values.persistence.storageClassName | quote }}
+        {{- end }}
+        resources: {requests: {storage: {{ .Values.backend.raftStorage }}}}

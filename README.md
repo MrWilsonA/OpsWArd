@@ -103,6 +103,11 @@ OpsWArd integrates a full roster of **26 specialized responder avatars**, each e
 * **Icons & Visuals**: [Lucide React](https://lucide.dev/) & [Canvas Confetti](https://github.com/catdad/canvas-confetti)
 * **Canvas Rendering**: High-performance HTML5 Pixel Canvas with crisp pixel art scaling
 * **Typography**: JetBrains Mono & Outfit (Google Fonts)
+* **Backend**: Elixir 1.18, Phoenix 1.8, Ecto/PostgreSQL, Broadway/Kafka, Oban, `ra`, and gRPC
+* **Realtime Media**: Phoenix Channels/Presence plus LiveKit SFU
+* **Infrastructure**: Docker Compose for local HA and Helm/Kubernetes for three-node deployment
+
+Backend and infrastructure documentation is available in [`backend/README.md`](backend/README.md). The REST contract is defined in [`backend/openapi.yaml`](backend/openapi.yaml), and the complete local stack starts with `docker compose up --build`.
 
 ---
 

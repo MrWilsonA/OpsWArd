@@ -1,0 +1,55 @@
+name: Backend CI
+
+on:
+  push:
+    paths: ["backend/**", "infra/**", "compose.yaml", ".github/workflows/backend-ci.yml"]
+  pull_request:
+    paths: ["backend/**", "infra/**", "compose.yaml", ".github/workflows/backend-ci.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  elixir:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: opsward_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d opsward_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      MIX_ENV: test
+      DATABASE_URL: ecto://postgres:postgres@localhost/opsward_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.18.4"
+          otp-version: "27.3.4.9"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            backend/deps
+            backend/_build
+          key: backend-${{ runner.os }}-${{ hashFiles('backend/mix.lock') }}
+      - run: mix deps.get
+      - run: mix ecto.create
+      - run: mix ecto.migrate
+      - run: mix precommit
+
+  infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
+      - uses: azure/setup-helm@v4
+      - run: helm lint infra/helm/opsward --strict --set backend.secretKeyBase=ci-secret-key-base-123456789,backend.releaseCookie=ci-release-cookie-123456789,postgresql.password=ci-password,livekit.apiKey=ci-key,livekit.apiSecret=ci-secret

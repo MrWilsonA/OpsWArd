@@ -1,0 +1,76 @@
+nameOverride: ""
+fullnameOverride: ""
+
+backend:
+  replicaCount: 3
+  raftStorage: 5Gi
+  image:
+    repository: ghcr.io/mrwilsona/opsward-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits: {cpu: "2", memory: 2Gi}
+  service:
+    httpPort: 4000
+    grpcPort: 50051
+  apiKey: ""
+  secretKeyBase: change-me-with-mix-phx-gen-secret
+  releaseCookie: change-me-with-a-long-random-cookie
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: ghcr.io/mrwilsona/opsward-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}
+  servicePort: 3000
+
+postgresql:
+  image: postgres:18-alpine
+  storage: 20Gi
+  username: opsward
+  password: change-me
+  database: opsward
+
+kafka:
+  image: apache/kafka:4.1.2
+  replicaCount: 3
+  storage: 20Gi
+  clusterId: MkU3OEVBNTcwNTJENDM2Qk
+
+redis:
+  image: redis:8.2-alpine
+  storage: 5Gi
+
+livekit:
+  image: livekit/livekit-server:v1.13.5
+  apiKey: change-me
+  apiSecret: change-me
+  rtcUdpStart: 50000
+  rtcUdpEnd: 50100
+
+ingress:
+  enabled: false
+  className: nginx
+  host: opsward.example.com
+  tlsSecretName: ""
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+networkPolicy:
+  enabled: true
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+persistence:
+  storageClassName: ""

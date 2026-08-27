@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+backend/_build
+backend/deps
+tools
+Reference
+*.log
+*.png
+!public/**/*.png

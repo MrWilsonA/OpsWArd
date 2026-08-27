@@ -1,0 +1,186 @@
+name: opsward
+
+x-backend: &backend
+  build:
+    context: ./backend
+  restart: unless-stopped
+  environment: &backend-env
+    PHX_HOST: localhost
+    PHX_SCHEME: http
+    PHX_URL_PORT: 4000
+    PORT: 4000
+    DATABASE_URL: ecto://opsward:opsward@postgres/opsward
+    SECRET_KEY_BASE: 7fYgLhrnukz6OW07WBV7YpPV5J3zzRw87jTqMCQqSbTlX7IrfeY/7O7Tjvvkw9cK
+    KAFKA_ENABLED: "true"
+    KAFKA_BROKERS: kafka:9092
+    RAFT_ENABLED: "true"
+    RAFT_NODES: opsward@backend-1,opsward@backend-2,opsward@backend-3
+    RELEASE_COOKIE: opsward-local-cluster-cookie
+    GRPC_ENABLED: "true"
+    LIVEKIT_URL: ws://localhost:7880
+    LIVEKIT_API_KEY: devkey
+    LIVEKIT_API_SECRET: secret
+    CORS_ORIGINS: http://localhost:3000
+  depends_on:
+    postgres:
+      condition: service_healthy
+    kafka:
+      condition: service_healthy
+    livekit:
+      condition: service_started
+  networks: [opsward]
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: opsward
+      POSTGRES_USER: opsward
+      POSTGRES_PASSWORD: opsward
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opsward -d opsward"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports: ["5432:5432"]
+    networks: [opsward]
+
+  kafka:
+    image: apache/kafka:4.1.2
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 8s
+      retries: 20
+    ports: ["9092:9092"]
+    volumes:
+      - kafka-data:/tmp/kraft-combined-logs
+    networks: [opsward]
+
+  redis:
+    image: redis:8.2-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [opsward]
+
+  livekit:
+    image: livekit/livekit-server:v1.13.5
+    restart: unless-stopped
+    command: ["--config", "/etc/livekit.yaml", "--node-ip", "127.0.0.1"]
+    volumes:
+      - ./infra/livekit/livekit.yaml:/etc/livekit.yaml:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "50000-50100:50000-50100/udp"
+    networks: [opsward]
+
+  backend-1:
+    <<: *backend
+    hostname: backend-1
+    environment:
+      <<: *backend-env
+      RELEASE_NODE: opsward@backend-1
+      RUN_MIGRATIONS: "true"
+    ports:
+      - "4000:4000"
+      - "50051:50051"
+    volumes:
+      - raft-data-1:/app/data/raft
+
+  backend-2:
+    <<: *backend
+    hostname: backend-2
+    environment:
+      <<: *backend-env
+      RELEASE_NODE: opsward@backend-2
+    volumes:
+      - raft-data-2:/app/data/raft
+
+  backend-3:
+    <<: *backend
+    hostname: backend-3
+    environment:
+      <<: *backend-env
+      RELEASE_NODE: opsward@backend-3
+    volumes:
+      - raft-data-3:/app/data/raft
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_OPSWARD_API_URL: http://localhost:4000/api/v1
+      NEXT_PUBLIC_OPSWARD_SOCKET_URL: ws://localhost:4000/socket
+      NEXT_PUBLIC_LIVEKIT_URL: ws://localhost:7880
+    depends_on:
+      backend-1:
+        condition: service_started
+    ports: ["3000:3000"]
+    networks: [opsward]
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports: ["9090:9090"]
+    networks: [opsward]
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: opsward
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on: [prometheus]
+    ports: ["3001:3000"]
+    networks: [opsward]
+
+networks:
+  opsward:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  kafka-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  raft-data-1:
+  raft-data-2:
+  raft-data-3:

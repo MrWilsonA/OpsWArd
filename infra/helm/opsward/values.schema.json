@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "backend": {
+      "type": "object",
+      "properties": {
+        "replicaCount": {"const": 3},
+        "raftStorage": {"type": "string", "minLength": 2},
+        "secretKeyBase": {"type": "string", "minLength": 16},
+        "releaseCookie": {"type": "string", "minLength": 16}
+      },
+      "required": ["replicaCount", "raftStorage", "secretKeyBase", "releaseCookie"]
+    },
+    "kafka": {
+      "type": "object",
+      "properties": {"replicaCount": {"const": 3}},
+      "required": ["replicaCount"]
+    },
+    "postgresql": {
+      "type": "object",
+      "properties": {"password": {"type": "string", "minLength": 8}},
+      "required": ["password"]
+    },
+    "livekit": {
+      "type": "object",
+      "properties": {
+        "apiKey": {"type": "string", "minLength": 3},
+        "apiSecret": {"type": "string", "minLength": 8}
+      },
+      "required": ["apiKey", "apiSecret"]
+    }
+  },
+  "required": ["backend", "kafka", "postgresql", "livekit"]
+}
