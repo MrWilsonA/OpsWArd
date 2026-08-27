@@ -1,14 +1,198 @@
 {
-  "floors": [{ "x1": 38, "y1": 38, "x2": 1498, "y2": 944 }],
+  "floors": [
+    {
+      "x1": 98,
+      "y1": 204,
+      "x2": 1448,
+      "y2": 868
+    },
+    {
+      "x1": 714,
+      "y1": 856,
+      "x2": 816,
+      "y2": 942
+    }
+  ],
   "obstacles": [
-    { "id": "north-benches", "x1": 45, "y1": 42, "x2": 1490, "y2": 250 },
-    { "id": "west-tanks", "x1": 45, "y1": 350, "x2": 320, "y2": 625 },
-    { "id": "northwest-grow-bed", "x1": 380, "y1": 275, "x2": 675, "y2": 510 },
-    { "id": "northeast-grow-bed", "x1": 865, "y1": 275, "x2": 1165, "y2": 510 },
-    { "id": "center-grow-bed", "x1": 605, "y1": 545, "x2": 925, "y2": 790 },
-    { "id": "east-sample-cabinets", "x1": 1200, "y1": 350, "x2": 1455, "y2": 610 },
-    { "id": "quiet-lounge", "x1": 1190, "y1": 620, "x2": 1450, "y2": 880 },
-    { "id": "southwest-planters", "x1": 40, "y1": 820, "x2": 610, "y2": 940 },
-    { "id": "southeast-planters", "x1": 930, "y1": 820, "x2": 1495, "y2": 940 }
+    {
+      "id": "west-tanks",
+      "x1": 101,
+      "y1": 394,
+      "x2": 280,
+      "y2": 539,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "northwest-grow-bed",
+      "x1": 380,
+      "y1": 275,
+      "x2": 671,
+      "y2": 486,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "northeast-grow-bed",
+      "x1": 865,
+      "y1": 275,
+      "x2": 1159,
+      "y2": 486,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "center-grow-bed",
+      "x1": 643,
+      "y1": 545,
+      "x2": 877,
+      "y2": 758,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "east-sample-cabinets",
+      "x1": 1248,
+      "y1": 340,
+      "x2": 1449,
+      "y2": 570,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "quiet-lounge",
+      "x1": 1190,
+      "y1": 620,
+      "x2": 1450,
+      "y2": 880,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "southwest-planters",
+      "x1": 40,
+      "y1": 822,
+      "x2": 596,
+      "y2": 940,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "southeast-planters",
+      "x1": 944,
+      "y1": 820,
+      "x2": 1495,
+      "y2": 940,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "west-tanks (1)",
+      "x1": 75,
+      "y1": 656,
+      "x2": 358,
+      "y2": 725,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "west-tanks (2)",
+      "x1": 123,
+      "y1": 754,
+      "x2": 140,
+      "y2": 823,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "west-tanks (3)",
+      "x1": 161,
+      "y1": 566,
+      "x2": 272,
+      "y2": 621,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "west-tanks (4)",
+      "x1": 109,
+      "y1": 544,
+      "x2": 148,
+      "y2": 645,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "northwest-grow-bed (1)",
+      "x1": 106,
+      "y1": 115,
+      "x2": 319,
+      "y2": 238,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "northwest-grow-bed (2)",
+      "x1": 116,
+      "y1": 257,
+      "x2": 283,
+      "y2": 356,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "northwest-grow-bed (3)",
+      "x1": 630,
+      "y1": 115,
+      "x2": 899,
+      "y2": 238,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "northwest-grow-bed (4)",
+      "x1": 1222,
+      "y1": 119,
+      "x2": 1437,
+      "y2": 316,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "center-grow-bed (1)",
+      "x1": 883,
+      "y1": 571,
+      "x2": 921,
+      "y2": 718,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "center-grow-bed (2)",
+      "x1": 583,
+      "y1": 571,
+      "x2": 621,
+      "y2": 686,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    }
   ]
 }

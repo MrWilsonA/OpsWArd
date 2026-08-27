@@ -1,17 +1,408 @@
 {
-  "floors": [{ "x1": 38, "y1": 38, "x2": 1498, "y2": 944 }],
+  "floors": [
+    {
+      "x1": 54,
+      "y1": 214,
+      "x2": 1478,
+      "y2": 896
+    },
+    {
+      "x1": 702,
+      "y1": 896,
+      "x2": 810,
+      "y2": 970
+    }
+  ],
   "obstacles": [
-    { "id": "north-operations", "x1": 55, "y1": 48, "x2": 1480, "y2": 225 },
-    { "id": "rack-a", "x1": 105, "y1": 255, "x2": 350, "y2": 430 },
-    { "id": "rack-b", "x1": 420, "y1": 255, "x2": 655, "y2": 430 },
-    { "id": "rack-c", "x1": 105, "y1": 445, "x2": 350, "y2": 630 },
-    { "id": "rack-d", "x1": 420, "y1": 445, "x2": 655, "y2": 630 },
-    { "id": "edge-routing-bench", "x1": 1195, "y1": 350, "x2": 1435, "y2": 680 },
-    { "id": "standby-lounge", "x1": 105, "y1": 655, "x2": 505, "y2": 900 },
-    { "id": "south-cabinets", "x1": 950, "y1": 755, "x2": 1450, "y2": 910 },
-    { "id": "speaker-nw", "x1": 830, "y1": 285, "x2": 885, "y2": 370 },
-    { "id": "speaker-ne", "x1": 1070, "y1": 285, "x2": 1125, "y2": 370 },
-    { "id": "speaker-sw", "x1": 830, "y1": 535, "x2": 885, "y2": 625 },
-    { "id": "speaker-se", "x1": 1070, "y1": 535, "x2": 1125, "y2": 625 }
+    {
+      "id": "rack-a",
+      "x1": 161,
+      "y1": 259,
+      "x2": 326,
+      "y2": 410,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "edge-routing-bench",
+      "x1": 1195,
+      "y1": 352,
+      "x2": 1417,
+      "y2": 666,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "south-cabinets",
+      "x1": 950,
+      "y1": 811,
+      "x2": 1408,
+      "y2": 892,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "speaker-se",
+      "x1": 1072,
+      "y1": 579,
+      "x2": 1103,
+      "y2": 607,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "speaker-sw (1)",
+      "x1": 612,
+      "y1": 841,
+      "x2": 667,
+      "y2": 931,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "speaker-sw (2)",
+      "x1": 846,
+      "y1": 839,
+      "x2": 901,
+      "y2": 929,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (1)",
+      "x1": 457,
+      "y1": 259,
+      "x2": 622,
+      "y2": 410,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (2)",
+      "x1": 457,
+      "y1": 445,
+      "x2": 622,
+      "y2": 596,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (3)",
+      "x1": 161,
+      "y1": 441,
+      "x2": 326,
+      "y2": 592,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (4)",
+      "x1": 125,
+      "y1": 309,
+      "x2": 158,
+      "y2": 396,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (5)",
+      "x1": 125,
+      "y1": 501,
+      "x2": 158,
+      "y2": 588,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (6)",
+      "x1": 423,
+      "y1": 499,
+      "x2": 456,
+      "y2": 586,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (7)",
+      "x1": 621,
+      "y1": 499,
+      "x2": 654,
+      "y2": 586,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (8)",
+      "x1": 621,
+      "y1": 319,
+      "x2": 654,
+      "y2": 398,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "rack-a (9)",
+      "x1": 421,
+      "y1": 319,
+      "x2": 454,
+      "y2": 398,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (1)",
+      "x1": 1072,
+      "y1": 534,
+      "x2": 1104,
+      "y2": 578,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (2)",
+      "x1": 842,
+      "y1": 534,
+      "x2": 874,
+      "y2": 578,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (3)",
+      "x1": 842,
+      "y1": 292,
+      "x2": 874,
+      "y2": 336,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (4)",
+      "x1": 1072,
+      "y1": 292,
+      "x2": 1104,
+      "y2": 336,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "speaker-se (1)",
+      "x1": 1072,
+      "y1": 337,
+      "x2": 1103,
+      "y2": 365,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "speaker-se (2)",
+      "x1": 842,
+      "y1": 337,
+      "x2": 873,
+      "y2": 365,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "speaker-se (3)",
+      "x1": 842,
+      "y1": 579,
+      "x2": 873,
+      "y2": 607,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "speaker-se (4)",
+      "x1": 962,
+      "y1": 423,
+      "x2": 985,
+      "y2": 471,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "edge-routing-bench (1)",
+      "x1": 647,
+      "y1": 174,
+      "x2": 907,
+      "y2": 230,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "edge-routing-bench (2)",
+      "x1": 1385,
+      "y1": 216,
+      "x2": 1469,
+      "y2": 310,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (1)",
+      "x1": 960,
+      "y1": 778,
+      "x2": 1006,
+      "y2": 818,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (2)",
+      "x1": 1028,
+      "y1": 786,
+      "x2": 1070,
+      "y2": 816,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (3)",
+      "x1": 1104,
+      "y1": 786,
+      "x2": 1146,
+      "y2": 816,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (4)",
+      "x1": 1160,
+      "y1": 788,
+      "x2": 1194,
+      "y2": 810,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (5)",
+      "x1": 1266,
+      "y1": 758,
+      "x2": 1338,
+      "y2": 810,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (6)",
+      "x1": 1366,
+      "y1": 778,
+      "x2": 1392,
+      "y2": 818,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (7)",
+      "x1": 1414,
+      "y1": 758,
+      "x2": 1474,
+      "y2": 894,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (8)",
+      "x1": 62,
+      "y1": 754,
+      "x2": 122,
+      "y2": 866,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (9)",
+      "x1": 210,
+      "y1": 688,
+      "x2": 426,
+      "y2": 774,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (10)",
+      "x1": 164,
+      "y1": 786,
+      "x2": 218,
+      "y2": 868,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (11)",
+      "x1": 416,
+      "y1": 784,
+      "x2": 470,
+      "y2": 866,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (12)",
+      "x1": 258,
+      "y1": 786,
+      "x2": 372,
+      "y2": 864,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (13)",
+      "x1": 148,
+      "y1": 702,
+      "x2": 182,
+      "y2": 776,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (14)",
+      "x1": 442,
+      "y1": 700,
+      "x2": 484,
+      "y2": 774,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    }
   ]
 }

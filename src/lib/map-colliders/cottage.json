@@ -1,14 +1,392 @@
 {
-  "floors": [{ "x1": 38, "y1": 38, "x2": 1498, "y2": 944 }],
+  "floors": [
+    {
+      "x1": 48,
+      "y1": 236,
+      "x2": 1484,
+      "y2": 916
+    }
+  ],
   "obstacles": [
-    { "id": "alert-ingestion", "x1": 50, "y1": 55, "x2": 505, "y2": 375 },
-    { "id": "broker-partitions", "x1": 575, "y1": 105, "x2": 980, "y2": 335 },
-    { "id": "dlq-cabinet", "x1": 1290, "y1": 70, "x2": 1435, "y2": 305 },
-    { "id": "replay-desk", "x1": 1070, "y1": 320, "x2": 1345, "y2": 510 },
-    { "id": "retry-pipeline", "x1": 550, "y1": 440, "x2": 955, "y2": 640 },
-    { "id": "payload-desk", "x1": 145, "y1": 615, "x2": 430, "y2": 800 },
-    { "id": "rest-kitchen", "x1": 1030, "y1": 590, "x2": 1460, "y2": 920 },
-    { "id": "southwest-planter", "x1": 45, "y1": 835, "x2": 630, "y2": 935 },
-    { "id": "southeast-planter", "x1": 870, "y1": 835, "x2": 1025, "y2": 935 }
+    {
+      "id": "alert-ingestion",
+      "x1": 50,
+      "y1": 55,
+      "x2": 477,
+      "y2": 339,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "broker-partitions",
+      "x1": 533,
+      "y1": 83,
+      "x2": 604,
+      "y2": 319,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "dlq-cabinet",
+      "x1": 1306,
+      "y1": 24,
+      "x2": 1423,
+      "y2": 259,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk",
+      "x1": 1404,
+      "y1": 364,
+      "x2": 1485,
+      "y2": 554,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline",
+      "x1": 560,
+      "y1": 444,
+      "x2": 941,
+      "y2": 634,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "payload-desk",
+      "x1": 49,
+      "y1": 659,
+      "x2": 108,
+      "y2": 826,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "southwest-planter",
+      "x1": 49,
+      "y1": 847,
+      "x2": 208,
+      "y2": 945,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "southeast-planter",
+      "x1": 870,
+      "y1": 847,
+      "x2": 1025,
+      "y2": 947,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "broker-partitions (1)",
+      "x1": 953,
+      "y1": 83,
+      "x2": 1016,
+      "y2": 321,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "broker-partitions (2)",
+      "x1": 593,
+      "y1": 223,
+      "x2": 964,
+      "y2": 293,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "payload-desk (1)",
+      "x1": 49,
+      "y1": 335,
+      "x2": 94,
+      "y2": 418,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "southeast-planter (1)",
+      "x1": 818,
+      "y1": 843,
+      "x2": 841,
+      "y2": 947,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "southeast-planter (2)",
+      "x1": 816,
+      "y1": 917,
+      "x2": 1489,
+      "y2": 949,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "southwest-planter (1)",
+      "x1": 395,
+      "y1": 847,
+      "x2": 606,
+      "y2": 945,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "payload-desk (2)",
+      "x1": 183,
+      "y1": 435,
+      "x2": 226,
+      "y2": 592,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "payload-desk (3)",
+      "x1": 77,
+      "y1": 471,
+      "x2": 236,
+      "y2": 590,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline (1)",
+      "x1": 518,
+      "y1": 490,
+      "x2": 557,
+      "y2": 568,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline (2)",
+      "x1": 944,
+      "y1": 488,
+      "x2": 983,
+      "y2": 566,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline (3)",
+      "x1": 198,
+      "y1": 634,
+      "x2": 393,
+      "y2": 712,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline (4)",
+      "x1": 198,
+      "y1": 712,
+      "x2": 251,
+      "y2": 742,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline (5)",
+      "x1": 342,
+      "y1": 712,
+      "x2": 391,
+      "y2": 742,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline (6)",
+      "x1": 344,
+      "y1": 598,
+      "x2": 385,
+      "y2": 634,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline (7)",
+      "x1": 238,
+      "y1": 602,
+      "x2": 295,
+      "y2": 638,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (1)",
+      "x1": 1362,
+      "y1": 732,
+      "x2": 1449,
+      "y2": 892,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (2)",
+      "x1": 1440,
+      "y1": 642,
+      "x2": 1481,
+      "y2": 746,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (3)",
+      "x1": 1400,
+      "y1": 694,
+      "x2": 1425,
+      "y2": 732,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (4)",
+      "x1": 1068,
+      "y1": 588,
+      "x2": 1125,
+      "y2": 714,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (5)",
+      "x1": 1036,
+      "y1": 620,
+      "x2": 1377,
+      "y2": 688,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (6)",
+      "x1": 1124,
+      "y1": 686,
+      "x2": 1331,
+      "y2": 712,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (7)",
+      "x1": 1172,
+      "y1": 748,
+      "x2": 1261,
+      "y2": 844,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (8)",
+      "x1": 1198,
+      "y1": 740,
+      "x2": 1237,
+      "y2": 876,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (9)",
+      "x1": 1142,
+      "y1": 758,
+      "x2": 1181,
+      "y2": 824,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (10)",
+      "x1": 1254,
+      "y1": 756,
+      "x2": 1293,
+      "y2": 822,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (11)",
+      "x1": 1094,
+      "y1": 354,
+      "x2": 1301,
+      "y2": 456,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "retry-pipeline (8)",
+      "x1": 1318,
+      "y1": 374,
+      "x2": 1357,
+      "y2": 452,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (12)",
+      "x1": 1178,
+      "y1": 456,
+      "x2": 1227,
+      "y2": 488,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (13)",
+      "x1": 1108,
+      "y1": 320,
+      "x2": 1279,
+      "y2": 354,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "replay-desk (14)",
+      "x1": 1170,
+      "y1": 310,
+      "x2": 1231,
+      "y2": 344,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    }
   ]
 }

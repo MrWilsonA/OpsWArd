@@ -1,12 +1,556 @@
 {
-  "floors": [{ "x1": 38, "y1": 38, "x2": 1498, "y2": 944 }],
+  "floors": [
+    {
+      "x1": 40,
+      "y1": 206,
+      "x2": 1500,
+      "y2": 906
+    },
+    {
+      "x1": 464,
+      "y1": 178,
+      "x2": 518,
+      "y2": 228
+    },
+    {
+      "x1": 1018,
+      "y1": 172,
+      "x2": 1072,
+      "y2": 222
+    },
+    {
+      "x1": 92,
+      "y1": 192,
+      "x2": 436,
+      "y2": 218
+    },
+    {
+      "x1": 706,
+      "y1": 904,
+      "x2": 826,
+      "y2": 954
+    }
+  ],
   "obstacles": [
-    { "id": "north-wall-systems", "x1": 42, "y1": 42, "x2": 1490, "y2": 230 },
-    { "id": "simulation-console", "x1": 45, "y1": 260, "x2": 430, "y2": 460 },
-    { "id": "workflow-table", "x1": 555, "y1": 290, "x2": 970, "y2": 605 },
-    { "id": "runbook-shelves", "x1": 1095, "y1": 285, "x2": 1455, "y2": 600 },
-    { "id": "rollback-workbench", "x1": 85, "y1": 545, "x2": 455, "y2": 830 },
-    { "id": "orchestration-desk", "x1": 565, "y1": 625, "x2": 945, "y2": 835 },
-    { "id": "coffee-nook", "x1": 1085, "y1": 620, "x2": 1455, "y2": 905 }
+    {
+      "id": "simulation-console",
+      "x1": 67,
+      "y1": 294,
+      "x2": 418,
+      "y2": 424,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table",
+      "x1": 609,
+      "y1": 342,
+      "x2": 916,
+      "y2": 545,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves",
+      "x1": 1141,
+      "y1": 171,
+      "x2": 1423,
+      "y2": 240,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (1)",
+      "x1": 657,
+      "y1": 302,
+      "x2": 694,
+      "y2": 343,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (2)",
+      "x1": 733,
+      "y1": 300,
+      "x2": 770,
+      "y2": 341,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (3)",
+      "x1": 819,
+      "y1": 300,
+      "x2": 856,
+      "y2": 341,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (4)",
+      "x1": 819,
+      "y1": 534,
+      "x2": 856,
+      "y2": 575,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (5)",
+      "x1": 735,
+      "y1": 534,
+      "x2": 772,
+      "y2": 575,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (6)",
+      "x1": 657,
+      "y1": 534,
+      "x2": 694,
+      "y2": 575,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (7)",
+      "x1": 581,
+      "y1": 384,
+      "x2": 610,
+      "y2": 433,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (8)",
+      "x1": 579,
+      "y1": 460,
+      "x2": 608,
+      "y2": 509,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (9)",
+      "x1": 917,
+      "y1": 458,
+      "x2": 946,
+      "y2": 507,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (10)",
+      "x1": 917,
+      "y1": 386,
+      "x2": 946,
+      "y2": 435,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (11)",
+      "x1": 1005,
+      "y1": 286,
+      "x2": 1060,
+      "y2": 367,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (12)",
+      "x1": 479,
+      "y1": 286,
+      "x2": 534,
+      "y2": 367,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "simulation-console (1)",
+      "x1": 107,
+      "y1": 258,
+      "x2": 382,
+      "y2": 294,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (1)",
+      "x1": 661,
+      "y1": 147,
+      "x2": 873,
+      "y2": 210,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (2)",
+      "x1": 1141,
+      "y1": 315,
+      "x2": 1211,
+      "y2": 440,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (3)",
+      "x1": 1233,
+      "y1": 315,
+      "x2": 1317,
+      "y2": 442,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (4)",
+      "x1": 1345,
+      "y1": 317,
+      "x2": 1411,
+      "y2": 444,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (1)",
+      "x1": 1140,
+      "y1": 440,
+      "x2": 1210,
+      "y2": 492,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (2)",
+      "x1": 1344,
+      "y1": 442,
+      "x2": 1410,
+      "y2": 492,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (3)",
+      "x1": 1232,
+      "y1": 442,
+      "x2": 1320,
+      "y2": 490,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (5)",
+      "x1": 1141,
+      "y1": 493,
+      "x2": 1211,
+      "y2": 568,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (6)",
+      "x1": 1233,
+      "y1": 491,
+      "x2": 1317,
+      "y2": 568,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (7)",
+      "x1": 1345,
+      "y1": 493,
+      "x2": 1411,
+      "y2": 566,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (8)",
+      "x1": 1109,
+      "y1": 407,
+      "x2": 1131,
+      "y2": 460,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (9)",
+      "x1": 1419,
+      "y1": 407,
+      "x2": 1441,
+      "y2": 460,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (10)",
+      "x1": 1423,
+      "y1": 525,
+      "x2": 1445,
+      "y2": 572,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (11)",
+      "x1": 1105,
+      "y1": 523,
+      "x2": 1127,
+      "y2": 570,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (12)",
+      "x1": 1073,
+      "y1": 633,
+      "x2": 1129,
+      "y2": 730,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (13)",
+      "x1": 1137,
+      "y1": 651,
+      "x2": 1445,
+      "y2": 724,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (14)",
+      "x1": 1301,
+      "y1": 639,
+      "x2": 1339,
+      "y2": 662,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (15)",
+      "x1": 1403,
+      "y1": 725,
+      "x2": 1441,
+      "y2": 782,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (16)",
+      "x1": 1427,
+      "y1": 803,
+      "x2": 1483,
+      "y2": 890,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (13)",
+      "x1": 47,
+      "y1": 814,
+      "x2": 102,
+      "y2": 895,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (17)",
+      "x1": 1187,
+      "y1": 769,
+      "x2": 1311,
+      "y2": 838,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (18)",
+      "x1": 1199,
+      "y1": 837,
+      "x2": 1229,
+      "y2": 878,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (19)",
+      "x1": 1269,
+      "y1": 837,
+      "x2": 1299,
+      "y2": 878,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (20)",
+      "x1": 1273,
+      "y1": 745,
+      "x2": 1305,
+      "y2": 770,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (21)",
+      "x1": 1195,
+      "y1": 747,
+      "x2": 1227,
+      "y2": 772,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (22)",
+      "x1": 1157,
+      "y1": 779,
+      "x2": 1189,
+      "y2": 828,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "runbook-shelves (23)",
+      "x1": 1309,
+      "y1": 779,
+      "x2": 1341,
+      "y2": 828,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (4)",
+      "x1": 96,
+      "y1": 538,
+      "x2": 402,
+      "y2": 606,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "walk-behind (5)",
+      "x1": 402,
+      "y1": 560,
+      "x2": 418,
+      "y2": 606,
+      "shape": "rect",
+      "through": true,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (1)",
+      "x1": 96,
+      "y1": 606,
+      "x2": 418,
+      "y2": 658,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (2)",
+      "x1": 110,
+      "y1": 658,
+      "x2": 428,
+      "y2": 692,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (3)",
+      "x1": 418,
+      "y1": 632,
+      "x2": 430,
+      "y2": 658,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "obstacle (4)",
+      "x1": 116,
+      "y1": 718,
+      "x2": 422,
+      "y2": 772,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (14)",
+      "x1": 591,
+      "y1": 690,
+      "x2": 626,
+      "y2": 767,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (15)",
+      "x1": 889,
+      "y1": 686,
+      "x2": 924,
+      "y2": 763,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    },
+    {
+      "id": "workflow-table (16)",
+      "x1": 641,
+      "y1": 642,
+      "x2": 868,
+      "y2": 797,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
+    }
   ]
 }
