@@ -755,17 +755,16 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       if (currentMap !== 'indoor') {
         const overlay = assetsRef.current.overlays[currentMap]?.[outdoorFrame];
         if (overlay?.complete && overlay.naturalWidth) context.drawImage(overlay, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-      }
-
-      if (showMesh) {
-        context.save();
-        context.beginPath();
-        context.arc(positionRef.current.x, positionRef.current.y, proximityRadius, 0, Math.PI * 2);
-        context.setLineDash([5, 7]);
-        context.strokeStyle = 'rgba(255, 235, 172, .72)';
-        context.lineWidth = 2;
-        context.stroke();
-        context.restore();
+        if (showMesh) {
+          context.save();
+          context.beginPath();
+          context.arc(positionRef.current.x, positionRef.current.y, proximityRadius, 0, Math.PI * 2);
+          context.setLineDash([5, 7]);
+          context.strokeStyle = 'rgba(255, 235, 172, .72)';
+          context.lineWidth = 2;
+          context.stroke();
+          context.restore();
+        }
       }
 
       const position = positionRef.current;
@@ -778,38 +777,55 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       currentNpcs.forEach((npc, index) => {
         depthQueue.push({ baseline: npc.y, draw: () => drawNpc(npc, now, index) });
       });
-
-      const occluderLayer = occluderLayerRef.current;
       let hiddenByFurniture = false;
-      if (currentMap === 'indoor' && occluderLayer && occluderFrameRef.current >= 0) {
-        const { drawSize, anchorY } = getSpriteMetrics(currentMap);
-        const playerBox = {
-          x1: position.x - drawSize / 4,
-          y1: position.y - anchorY + 6,
-          x2: position.x + drawSize / 4,
-          y2: position.y + 10,
-        };
-        OCCLUDERS.forEach((object) => {
-          if (object.x > view.x2 || object.x + object.width < view.x1) return;
-          if (object.y > view.y2 || object.y + object.height < view.y1) return;
-          if (
-            object.through
-            && object.baseline > position.y
-            && object.x < playerBox.x2 && object.x + object.width > playerBox.x1
-            && object.y < playerBox.y2 && object.y + object.height > playerBox.y1
-          ) {
-            hiddenByFurniture = true;
-          }
-          depthQueue.push({
-            baseline: object.baseline,
-            draw: () => context.drawImage(
-              occluderLayer,
-              object.x, object.y, object.width, object.height,
-              object.x, object.y, object.width, object.height,
-            ),
-          });
+      const { drawSize, anchorY } = getSpriteMetrics(currentMap);
+      const playerBox = {
+        x1: position.x - drawSize / 4,
+        y1: position.y - anchorY + 6,
+        x2: position.x + drawSize / 4,
+        y2: position.y + 10,
+      };
+
+      const mapObstacles = currentMap === 'indoor'
+        ? OCCLUDERS
+        : (EXTRA_MAP_COLLIDERS[currentMap]?.obstacles || []).map((ob) => ({
+            id: ob.id || 'obs',
+            x: ob.x1,
+            y: ob.y1,
+            width: ob.x2 - ob.x1,
+            height: ob.y2 - ob.y1,
+            baseline: ob.y2,
+            through: Boolean(ob.through),
+          }));
+
+      mapObstacles.forEach((object) => {
+        if (object.x > view.x2 || object.x + object.width < view.x1) return;
+        if (object.y > view.y2 || object.y + object.height < view.y1) return;
+        if (object.through) return;
+
+        const isPlayerBehind = object.baseline > position.y;
+        const isIntersecting = (
+          object.x < playerBox.x2 && object.x + object.width > playerBox.x1 &&
+          object.y < playerBox.y2 && object.y + object.height > playerBox.y1
+        );
+
+        if (isPlayerBehind && isIntersecting) {
+          hiddenByFurniture = true;
+        }
+
+        depthQueue.push({
+          baseline: object.baseline,
+          draw: () => {
+            if (background?.complete) {
+              context.drawImage(
+                background,
+                object.x, object.y, object.width, object.height,
+                object.x, object.y, object.width, object.height,
+              );
+            }
+          },
         });
-      }
+      });
 
       depthQueue.push({
         baseline: position.y,
@@ -821,13 +837,14 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
           }
         },
       });
+
       depthQueue.sort((left, right) => left.baseline - right.baseline);
       depthQueue.forEach((item) => item.draw());
 
-      // Tucked behind a shelf the avatar would vanish entirely, so leave a
-      // readable silhouette on top of whatever is covering them.
+      // Tucked behind a shelf/obstacle the avatar would vanish entirely, so leave a
+      // readable translucent silhouette on top of whatever is covering them.
       if (hiddenByFurniture && playerSheet?.complete && playerSheet.naturalWidth) {
-        drawGradedSprite(playerSheet, playerFrame, playerRow, position.x, position.y, 0.24);
+        drawGradedSprite(playerSheet, playerFrame, playerRow, position.x, position.y, 0.35);
       }
 
       const burst = interactionBurstRef.current;
@@ -852,7 +869,6 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       context.fillStyle = currentMap === 'outdoor'
         ? `rgba(255, 226, 138, ${0.01 + daylight * 0.018})`
         : `rgba(246, 164, 78, ${0.025 + daylight * 0.025})`;
-      context.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
       const vignette = context.createRadialGradient(VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 220, VIEW_WIDTH / 2, VIEW_HEIGHT / 2, 510);
       vignette.addColorStop(0, 'rgba(18, 10, 8, 0)');
       vignette.addColorStop(1, 'rgba(18, 10, 8, .2)');

@@ -207,10 +207,7 @@ def build_masks():
         if obstacle.get("occlude", True):
             rasterise((x1, y1, x2, y2), shape, occluder, True)
         if obstacle.get("through"):
-            depth = y2 - y1 if y2 - y1 <= SHORT_PIECE else THROUGH_DEPTH
-            rasterise((x1, y2 - depth, x2, y2), shape, walkable, True)
-            if y2 - depth > y1:
-                rasterise((x1, y1, x2, y2 - depth), shape, walkable, False)
+            rasterise((x1, y1, x2, y2), shape, walkable, True)
         else:
             rasterise((x1, y1, x2, y2), shape, walkable, False)
     return walkable, occluder
