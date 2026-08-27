@@ -74,6 +74,16 @@ const ROOM_SHORTCUTS = [
   { name: 'Central Hall', x: 768, y: 512, color: '#e2e8f0' },
 ];
 
+const MAP_OPTIONS: { id: WorldMapId; label: string; icon: string }[] = [
+  { id: 'indoor', label: 'Operations Hall', icon: '🏢' },
+  { id: 'outdoor', label: 'Outdoor Campus', icon: '🌲' },
+  { id: 'greenhouse', label: 'Greenhouse', icon: '🌿' },
+  { id: 'relay', label: 'Relay Station', icon: '📡' },
+  { id: 'workshop', label: 'Workshop', icon: '⚙️' },
+  { id: 'lodge', label: 'Lodge', icon: '🏕️' },
+  { id: 'cottage', label: 'Cottage', icon: '🏡' },
+];
+
 export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   isOpen,
   mapId,
@@ -83,6 +93,12 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
+
+  const [currentMapId, setCurrentMapId] = useState<WorldMapId>(mapId || 'indoor');
+
+  useEffect(() => {
+    if (mapId) setCurrentMapId(mapId);
+  }, [mapId]);
 
   const [floors, setFloors] = useState<FloorRect[]>([]);
   const [obstacles, setObstacles] = useState<ObstacleRect[]>([]);
@@ -133,30 +149,33 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
   const [statusMsg, setStatusMsg] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load Initial Colliders
-  const loadColliders = useCallback(async () => {
+  // Load Initial Colliders for current map
+  const loadColliders = useCallback(async (targetMap?: WorldMapId) => {
+    const map = targetMap || currentMapId;
     try {
-      const res = await fetch(`/api/colliders?map=${mapId}`);
+      const res = await fetch(`/api/colliders?map=${map}`);
       if (res.ok) {
         const data = await res.json();
         setFloors(data.floors || []);
         setObstacles(data.obstacles || []);
         setUndoStack([]);
         setRedoStack([]);
+        setSelectedIndex(null);
+        setSelectedType(null);
       }
     } catch (err) {
       console.error('Failed to fetch colliders:', err);
     }
-  }, [mapId]);
+  }, [currentMapId]);
 
   useEffect(() => {
     if (isOpen) {
-      loadColliders();
+      loadColliders(currentMapId);
       const img = new Image();
-      img.src = MAP_BACKGROUNDS[mapId];
+      img.src = MAP_BACKGROUNDS[currentMapId] || MAP_BACKGROUNDS.indoor;
       img.onload = () => setBgImage(img);
     }
-  }, [isOpen, loadColliders, mapId]);
+  }, [isOpen, loadColliders, currentMapId]);
 
   // Record History for Undo (Clears Redo stack on new change)
   const recordHistory = useCallback(() => {
@@ -208,7 +227,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       const res = await fetch('/api/colliders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ floors, obstacles, mapId }),
+        body: JSON.stringify({ floors, obstacles, mapId: currentMapId }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -841,33 +860,55 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     >
       <div className="relative flex flex-col w-full h-full max-w-[1720px] max-h-[97vh] bg-[#110d0b] border border-amber-900/40 rounded-2xl shadow-2xl overflow-hidden text-neutral-200">
         {/* Sleek Compact Studio Header (Single Line ~46px) */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-amber-900/30 bg-[#16100e] text-[9px]">
-          {/* Left Title & Status */}
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="p-1.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-400">
-              <Layers className="w-4 h-4" />
+        <div className="flex items-center justify-between px-3 py-2 border-b border-amber-900/30 bg-[#16100e] text-[9px] gap-2">
+          {/* Left Title & Map Selector Dropdown */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="p-1 bg-amber-500/10 border border-amber-500/30 rounded text-amber-400">
+              <Layers className="w-3.5 h-3.5" />
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-[10px] text-amber-100 tracking-tight">COLLIDER STUDIO · {mapId.toUpperCase()}</span>
-              <span className="text-[7px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-                v2.1
-              </span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-[8px] text-amber-100 tracking-tight hidden sm:inline">STUDIO:</span>
+              <select
+                value={currentMapId}
+                onChange={(e) => {
+                  const newMap = e.target.value as WorldMapId;
+                  setCurrentMapId(newMap);
+                  setSelectedIndex(null);
+                  setSelectedType(null);
+                }}
+                className="px-2 py-1 text-[8px] font-bold rounded bg-[#201511] text-amber-200 border border-amber-700/80 hover:border-amber-500 focus:outline-none focus:border-amber-400 cursor-pointer shadow-inner uppercase"
+                title="Select Interior / Map to Edit"
+              >
+                {MAP_OPTIONS.map((m) => (
+                  <option key={m.id} value={m.id} className="bg-[#18100d] text-amber-200 text-[8px]">
+                    {m.icon} {m.label.toUpperCase()}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           {/* Center Room Jump Buttons */}
-          <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-black/40 border border-neutral-800 rounded-lg overflow-x-auto">
-            <span className="text-[8px] font-bold text-neutral-500 uppercase px-1">JUMP:</span>
-            {(mapId === 'indoor' ? ROOM_SHORTCUTS : [{ name: mapId, x: 768, y: 512, color: '#f59e0b' }]).map((r) => (
-              <button
-                key={r.name}
-                onClick={() => jumpTo(r.x, r.y)}
-                className="px-2 py-0.5 text-[8px] font-medium rounded hover:bg-white/10 text-neutral-300 hover:text-white transition-all flex items-center gap-1 whitespace-nowrap"
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: r.color }} />
-                {r.name}
-              </button>
-            ))}
+          <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-black/40 border border-neutral-800 rounded-lg overflow-x-auto max-w-[420px]">
+            {currentMapId === 'indoor' ? (
+              <>
+                <span className="text-[7px] font-bold text-neutral-500 uppercase px-1">ROOM:</span>
+                {ROOM_SHORTCUTS.map((r) => (
+                  <button
+                    key={r.name}
+                    onClick={() => jumpTo(r.x, r.y)}
+                    className="px-1.5 py-0.5 text-[7px] font-medium rounded hover:bg-white/10 text-neutral-300 hover:text-white transition-all flex items-center gap-1 whitespace-nowrap"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: r.color }} />
+                    {r.name}
+                  </button>
+                ))}
+              </>
+            ) : (
+              <span className="text-[7px] font-bold text-amber-300 px-2 uppercase">
+                {MAP_OPTIONS.find((m) => m.id === currentMapId)?.label}
+              </span>
+            )}
           </div>
 
           {/* Right Action Tools */}
@@ -903,7 +944,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
               <Redo2 className="w-3 h-3" /> REDO
             </button>
             <button
-              onClick={loadColliders}
+              onClick={() => loadColliders(currentMapId)}
               title="Revert all unsaved changes"
               className="flex items-center gap-1 px-2 py-1 text-[8px] font-semibold rounded bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 transition-colors"
             >
