@@ -8,6 +8,7 @@ import campusColliders from '@/lib/campus-colliders.json';
 import { EXTRA_MAP_COLLIDERS, MAP_BACKGROUNDS, WorldMapId } from '@/lib/world-maps';
 import { Clock3, Coffee, Gamepad2, Headphones, Layers, Leaf, MapPin, Radio, Sparkles, Users, Volume2, VolumeX } from 'lucide-react';
 import { ColliderEditorModal } from './ColliderEditorModal';
+import { soundManager } from '@/lib/sound-manager';
 
 interface TacticalCanvasRoomProps {
   selectedAvatar: CharacterProfile;
@@ -669,6 +670,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         if (Math.abs(dx) > Math.abs(dy)) directionRef.current = dx > 0 ? 'right' : 'left';
         else directionRef.current = dy > 0 ? 'down' : 'up';
         const isRunning = keys.has('shift');
+        soundManager.startFootsteps(isRunning);
         const currentSpeed = getWalkSpeed(currentMap, isRunning);
         const magnitude = Math.hypot(dx, dy) || 1;
         const stepX = (dx / magnitude) * currentSpeed * delta;
@@ -681,6 +683,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         positionRef.current = { x: nextX, y: nextY };
         stepPhaseRef.current += Math.hypot(nextX - current.x, nextY - current.y);
       } else {
+        soundManager.stopFootsteps();
         stepPhaseRef.current = 0;
       }
 
