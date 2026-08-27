@@ -44,12 +44,11 @@ const NPC_RADIUS_X = 13;
 const NPC_RADIUS_Y = 9;
 
 const SPRITE_SIZE = 64;
-const OUTDOOR_SPRITE_DRAW_SIZE = 44;
+const OUTDOOR_SPRITE_DRAW_SIZE = 64;
 const INTERIOR_SPRITE_DRAW_SIZE = 64;
-const SPRITE_ANCHOR_RATIO = 36 / 44;
-const getSpriteMetrics = (map: WorldMapId) => {
-  const drawSize = map === 'outdoor' ? OUTDOOR_SPRITE_DRAW_SIZE : INTERIOR_SPRITE_DRAW_SIZE;
-  return { drawSize, anchorY: Math.round(drawSize * SPRITE_ANCHOR_RATIO) };
+const SPRITE_ANCHOR_RATIO = 52 / 64;
+const getSpriteMetrics = (_map: WorldMapId) => {
+  return { drawSize: 64, anchorY: 52 };
 };
 const WALK_SPEED = 148;
 const NAV_GRID = 8;
