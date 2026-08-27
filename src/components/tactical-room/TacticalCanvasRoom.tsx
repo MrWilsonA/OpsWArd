@@ -758,18 +758,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
 
         if (x1 > view.x2 || x1 + width < view.x1) return;
         if (y1 > view.y2 || y1 + height < view.y1) return;
-        if (object.through) return;
 
-        const isPlayerBehind = baseline > position.y;
-        const isIntersecting = (
-          x1 < playerBox.x2 && x1 + width > playerBox.x1 &&
-          y1 < playerBox.y2 && y1 + height > playerBox.y1
-        );
-
-        if (isPlayerBehind && (isIntersecting || inThroughZone)) {
-          hiddenByFurniture = true;
-        }
-
+        // Both RED (solid) and PURPLE (walk-behind) are drawn at their baseline depth!
+        // When player is behind it (player.y <= baseline), the obstacle graphics are drawn OVER the player!
         depthQueue.push({
           baseline,
           draw: () => {
@@ -797,12 +788,6 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
 
       depthQueue.sort((left, right) => left.baseline - right.baseline);
       depthQueue.forEach((item) => item.draw());
-
-      // Tucked behind a shelf/obstacle the avatar would vanish entirely, so leave a
-      // readable translucent silhouette on top of whatever is covering them.
-      if (hiddenByFurniture && playerSheet?.complete && playerSheet.naturalWidth) {
-        drawGradedSprite(playerSheet, playerFrame, playerRow, position.x, position.y, 0.35);
-      }
 
       const burst = interactionBurstRef.current;
       if (burst && now < burst.until) {
