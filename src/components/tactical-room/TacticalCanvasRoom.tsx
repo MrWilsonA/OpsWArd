@@ -45,11 +45,19 @@ const NPC_RADIUS_X = 13;
 const NPC_RADIUS_Y = 9;
 
 const SPRITE_SIZE = 64;
-const getMapZoom = (map: WorldMapId) => (map === 'indoor' ? 1.0 : 1.45);
+const getMapZoom = (map: WorldMapId) => (map === 'outdoor' ? 1.45 : 1.0);
 const getSpriteMetrics = (map: WorldMapId) => {
-  const drawSize = map === 'indoor' ? 64 : 44;
-  const anchorY = map === 'indoor' ? 52 : 36;
-  return { drawSize, anchorY };
+  if (map === 'outdoor') {
+    return { drawSize: 44, anchorY: 36 };
+  }
+  if (map === 'indoor') {
+    return { drawSize: 64, anchorY: 52 };
+  }
+  // For satellite interior facilities (greenhouse, relay, workshop, lodge, cottage)
+  // where the background artwork furniture was drawn at a larger pixel scale,
+  // the character sprite is drawn at 138px so the character-to-furniture and character-to-plant
+  // ratio matches the Central Operations Hall precisely!
+  return { drawSize: 138, anchorY: 112 };
 };
 const WALK_SPEED = 148;
 const NAV_GRID = 8;
@@ -609,8 +617,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     const drawNpc = (npc: NpcSpot, now: number, index: number) => {
       const sheet = assetsRef.current.sprites[npc.id];
       if (!sheet?.complete || !sheet.naturalWidth) return;
+      const { drawSize } = getSpriteMetrics(activeMapRef.current);
       const bob = Math.round(Math.sin(now / 620 + index) * 1);
-      drawContactShadow(npc.x, npc.y, 12, 0.4);
+      drawContactShadow(npc.x, npc.y, Math.round(12 * (drawSize / 64)), 0.4);
       drawGradedSprite(sheet, 0, 0, npc.x, npc.y + bob, 1);
     };
 
@@ -809,7 +818,8 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         baseline: position.y,
         draw: () => {
           const settle = movingRef.current ? 1.04 : 1;
-          drawContactShadow(position.x, position.y, 11 * settle, 0.46);
+          const { drawSize } = getSpriteMetrics(currentMap);
+          drawContactShadow(position.x, position.y, Math.round(11 * (drawSize / 64)) * settle, 0.46);
           if (playerSheet?.complete && playerSheet.naturalWidth) {
             drawGradedSprite(playerSheet, playerFrame, playerRow, position.x, position.y, 1);
           }
