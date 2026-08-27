@@ -398,12 +398,12 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       for (let tileX = 0; tileX < 2; tileX += 1) {
         const tileIndex = tileY * 2 + tileX;
         pending.push(
-          loadImage(`/game-assets/outdoor-v10-seamless-tiles/outdoor-${tileX}-${tileY}.png`)
+          loadImage(`/game-assets/outdoor-v11-seamless-tiles/outdoor-${tileX}-${tileY}.png`)
             .then((image) => { assetsRef.current.outdoorTiles[tileIndex] = image; }),
         );
         for (let frame = 0; frame < OUTDOOR_FRAME_COUNT; frame += 1) {
           pending.push(
-            loadImage(`/game-assets/outdoor-v10-hires-overlays/outdoor-${tileX}-${tileY}-${String(frame).padStart(2, '0')}.png`)
+            loadImage(`/game-assets/outdoor-v11-hires-overlays/outdoor-${tileX}-${tileY}-${String(frame).padStart(2, '0')}.png`)
               .then((image) => { assetsRef.current.outdoorTileOverlays[tileIndex][frame] = image; }),
           );
         }

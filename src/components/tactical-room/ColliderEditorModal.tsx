@@ -177,21 +177,25 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     }
   }, [isOpen, loadColliders, currentMapId]);
 
-  // Record History for Undo (Clears Redo stack on new change)
+  // Record History for Undo (Stores up to 100 history snapshots)
   const recordHistory = useCallback(() => {
     setUndoStack((prev) => [
-      ...prev.slice(-25),
+      ...prev.slice(-99),
       { floors: JSON.parse(JSON.stringify(floors)), obstacles: JSON.parse(JSON.stringify(obstacles)) },
     ]);
     setRedoStack([]);
   }, [floors, obstacles]);
 
-  // Undo Function (Ctrl+Z)
+  // Undo Function (Ctrl+Z) - Up to 100 history levels
   const handleUndo = useCallback(() => {
-    if (undoStack.length === 0) return;
+    if (undoStack.length === 0) {
+      setStatusMsg({ text: 'Nothing to undo', type: 'info' });
+      setTimeout(() => setStatusMsg(null), 1000);
+      return;
+    }
     const previous = undoStack[undoStack.length - 1];
     setRedoStack((prev) => [
-      ...prev,
+      ...prev.slice(-99),
       { floors: JSON.parse(JSON.stringify(floors)), obstacles: JSON.parse(JSON.stringify(obstacles)) },
     ]);
     setFloors(previous.floors);
@@ -199,16 +203,20 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     setUndoStack((prev) => prev.slice(0, -1));
     setSelectedIndex(null);
     setSelectedType(null);
-    setStatusMsg({ text: 'Undo', type: 'info' });
+    setStatusMsg({ text: `Undo (${undoStack.length - 1} steps remaining)`, type: 'info' });
     setTimeout(() => setStatusMsg(null), 1500);
   }, [floors, obstacles, undoStack]);
 
   // Redo Function (Ctrl+Y / Ctrl+Shift+Z)
   const handleRedo = useCallback(() => {
-    if (redoStack.length === 0) return;
+    if (redoStack.length === 0) {
+      setStatusMsg({ text: 'Nothing to redo', type: 'info' });
+      setTimeout(() => setStatusMsg(null), 1000);
+      return;
+    }
     const next = redoStack[redoStack.length - 1];
     setUndoStack((prev) => [
-      ...prev,
+      ...prev.slice(-99),
       { floors: JSON.parse(JSON.stringify(floors)), obstacles: JSON.parse(JSON.stringify(obstacles)) },
     ]);
     setFloors(next.floors);
@@ -216,7 +224,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     setRedoStack((prev) => prev.slice(0, -1));
     setSelectedIndex(null);
     setSelectedType(null);
-    setStatusMsg({ text: 'Redo', type: 'info' });
+    setStatusMsg({ text: `Redo (${redoStack.length - 1} steps remaining)`, type: 'info' });
     setTimeout(() => setStatusMsg(null), 1500);
   }, [floors, obstacles, redoStack]);
 
@@ -325,6 +333,21 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     return () => window.removeEventListener('resize', updateSize);
   }, [isOpen, isSidebarOpen]);
 
+  // Helper to generate clean incremented names like "vault-cabinet (1)", "vault-cabinet (2)"
+  const getIncrementedId = useCallback((originalId: string, currentObstacles: ObstacleRect[]) => {
+    let base = originalId.replace(/(-copy)+$/i, '').replace(/\s*\(\d+\)$/, '').trim();
+    if (!base) base = 'obstacle';
+
+    const existing = new Set(currentObstacles.map((o) => o.id));
+    let index = 1;
+    let candidate = `${base} (${index})`;
+    while (existing.has(candidate)) {
+      index += 1;
+      candidate = `${base} (${index})`;
+    }
+    return candidate;
+  }, []);
+
   // Delete Selected
   const deleteSelected = useCallback(() => {
     if (selectedIndex === null) return;
@@ -342,7 +365,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     setTimeout(() => setStatusMsg(null), 2000);
   }, [obstacles, recordHistory, selectedIndex, selectedType]);
 
-  // Duplicate Selected
+  // Duplicate Selected with smart increment (1), (2)...
   const duplicateSelected = useCallback(() => {
     if (!selectedItem || selectedIndex === null) return;
     recordHistory();
@@ -352,11 +375,13 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       const copy: FloorRect = { x1: f.x1 + offset, y1: f.y1 + offset, x2: f.x2 + offset, y2: f.y2 + offset };
       setFloors((prev) => [...prev, copy]);
       setSelectedIndex(floors.length);
+      setStatusMsg({ text: `Duplicated Floor #${floors.length + 1} (Ctrl+D)`, type: 'success' });
     } else if (selectedType === 'obstacle') {
       const ob = selectedItem as ObstacleRect;
+      const newId = getIncrementedId(ob.id, obstacles);
       const copy: ObstacleRect = {
         ...ob,
-        id: `${ob.id}-copy`,
+        id: newId,
         x1: ob.x1 + offset,
         y1: ob.y1 + offset,
         x2: ob.x2 + offset,
@@ -364,10 +389,10 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       };
       setObstacles((prev) => [...prev, copy]);
       setSelectedIndex(obstacles.length);
+      setStatusMsg({ text: `Duplicated: ${newId} (Ctrl+D)`, type: 'success' });
     }
-    setStatusMsg({ text: 'Duplicated collider (Ctrl+D)', type: 'success' });
     setTimeout(() => setStatusMsg(null), 2000);
-  }, [floors.length, obstacles.length, recordHistory, selectedIndex, selectedItem, selectedType]);
+  }, [floors.length, getIncrementedId, obstacles, recordHistory, selectedIndex, selectedItem, selectedType]);
 
   // Spacebar Pan & Keyboard Shortcut Listeners
   useEffect(() => {
@@ -789,6 +814,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       const maxY = Math.max(drawingBox.y1, drawingBox.y2);
 
       if (maxX - minX >= 6 && maxY - minY >= 6) {
+        recordHistory();
         if (activeTool === 'add-floor') {
           const newFloor: FloorRect = { x1: minX, y1: minY, x2: maxX, y2: maxY };
           setFloors((prev) => [...prev, newFloor]);
@@ -796,8 +822,10 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
           setSelectedIndex(floors.length);
           setStatusMsg({ text: `Added Floor #${floors.length + 1}`, type: 'success' });
         } else if (activeTool === 'add-solid' || activeTool === 'add-through') {
+          const baseName = activeTool === 'add-through' ? 'walk-behind' : 'obstacle';
+          const newId = getIncrementedId(baseName, obstacles);
           const newObs: ObstacleRect = {
-            id: `obs-${Date.now().toString().slice(-4)}`,
+            id: newId,
             x1: minX,
             y1: minY,
             x2: maxX,
