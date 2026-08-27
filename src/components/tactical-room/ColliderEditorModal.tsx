@@ -888,24 +888,31 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
             </div>
           </div>
 
-          {/* Center Room Jump Buttons */}
-          <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-black/40 border border-neutral-800 rounded-lg overflow-x-auto max-w-[420px]">
+          {/* Center Room Jump Selector */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-black/40 border border-neutral-800 rounded-lg flex-shrink-0">
             {currentMapId === 'indoor' ? (
-              <>
-                <span className="text-[7px] font-bold text-neutral-500 uppercase px-1">ROOM:</span>
-                {ROOM_SHORTCUTS.map((r) => (
-                  <button
-                    key={r.name}
-                    onClick={() => jumpTo(r.x, r.y)}
-                    className="px-1.5 py-0.5 text-[7px] font-medium rounded hover:bg-white/10 text-neutral-300 hover:text-white transition-all flex items-center gap-1 whitespace-nowrap"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: r.color }} />
-                    {r.name}
-                  </button>
-                ))}
-              </>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[8px] font-bold text-neutral-400 uppercase">ROOM:</span>
+                <select
+                  onChange={(e) => {
+                    const idx = Number(e.target.value);
+                    if (idx >= 0 && ROOM_SHORTCUTS[idx]) {
+                      jumpTo(ROOM_SHORTCUTS[idx].x, ROOM_SHORTCUTS[idx].y);
+                    }
+                  }}
+                  defaultValue=""
+                  className="px-2 py-1 text-[8px] font-bold rounded bg-[#201511] text-amber-200 border border-neutral-700 hover:border-amber-500 focus:outline-none cursor-pointer uppercase"
+                >
+                  <option value="" disabled>JUMP TO ROOM...</option>
+                  {ROOM_SHORTCUTS.map((r, i) => (
+                    <option key={r.name} value={i} className="bg-[#18100d] text-amber-200">
+                      {r.name.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
             ) : (
-              <span className="text-[7px] font-bold text-amber-300 px-2 uppercase">
+              <span className="text-[8px] font-bold text-amber-300 px-1 uppercase">
                 {MAP_OPTIONS.find((m) => m.id === currentMapId)?.label}
               </span>
             )}
@@ -1115,38 +1122,38 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
 
           {/* Right Inspector & List Sidebar */}
           {isSidebarOpen && (
-            <div className="w-80 bg-[#140e0c] border-l border-amber-900/30 flex flex-col overflow-hidden font-sans">
+            <div className="w-84 sm:w-96 bg-[#140e0c] border-l border-amber-900/30 flex flex-col overflow-hidden">
               {/* Sidebar Tabs */}
               <div className="flex border-b border-neutral-800/80 bg-[#100b09]">
                 <button
                   onClick={() => setSidebarTab('inspector')}
-                  className={`flex-1 py-2 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
+                  className={`flex-1 py-2.5 text-[8px] font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap px-1 ${
                     sidebarTab === 'inspector'
-                      ? 'border-amber-500 text-amber-300 bg-amber-500/5'
+                      ? 'border-amber-500 text-amber-300 bg-amber-500/10'
                       : 'border-transparent text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  <Sliders className="w-3 h-3" /> Inspector
+                  <Sliders className="w-3 h-3 flex-shrink-0" /> INSPECT
                 </button>
                 <button
                   onClick={() => setSidebarTab('list')}
-                  className={`flex-1 py-2 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
+                  className={`flex-1 py-2.5 text-[8px] font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap px-1 ${
                     sidebarTab === 'list'
-                      ? 'border-amber-500 text-amber-300 bg-amber-500/5'
+                      ? 'border-amber-500 text-amber-300 bg-amber-500/10'
                       : 'border-transparent text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  <Layers className="w-3 h-3" /> List ({floors.length + obstacles.length})
+                  <Layers className="w-3 h-3 flex-shrink-0" /> LIST ({floors.length + obstacles.length})
                 </button>
                 <button
                   onClick={() => setSidebarTab('settings')}
-                  className={`flex-1 py-2 text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
+                  className={`flex-1 py-2.5 text-[8px] font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap px-1 ${
                     sidebarTab === 'settings'
-                      ? 'border-amber-500 text-amber-300 bg-amber-500/5'
+                      ? 'border-amber-500 text-amber-300 bg-amber-500/10'
                       : 'border-transparent text-neutral-400 hover:text-neutral-200'
                   }`}
                 >
-                  <Eye className="w-3 h-3" /> Display
+                  <Eye className="w-3 h-3 flex-shrink-0" /> VIEW
                 </button>
               </div>
 

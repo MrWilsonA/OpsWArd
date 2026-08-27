@@ -4,6 +4,8 @@ import path from 'path';
 import { exec } from 'child_process';
 import util from 'util';
 
+export const dynamic = 'force-dynamic';
+
 const execPromise = util.promisify(exec);
 const MAP_IDS = new Set(['indoor', 'outdoor', 'greenhouse', 'relay', 'workshop', 'lodge', 'cottage']);
 
@@ -13,11 +15,19 @@ const getCollidersPath = (mapId: string) => mapId === 'indoor'
 
 export async function GET(req: NextRequest) {
   try {
-    const mapId = req.nextUrl.searchParams.get('map') ?? 'indoor';
+    let mapId = 'indoor';
+    try {
+      const url = new URL(req.url);
+      mapId = url.searchParams.get('map') || 'indoor';
+    } catch {
+      mapId = req.nextUrl?.searchParams?.get('map') || 'indoor';
+    }
+
     if (!MAP_IDS.has(mapId)) return NextResponse.json({ error: 'Unknown map' }, { status: 400 });
     const collidersPath = getCollidersPath(mapId);
     if (fs.existsSync(collidersPath)) {
-      const data = JSON.parse(fs.readFileSync(collidersPath, 'utf-8'));
+      const raw = fs.readFileSync(collidersPath, 'utf-8');
+      const data = JSON.parse(raw);
       return NextResponse.json(data);
     }
     return NextResponse.json({ floors: [], obstacles: [] });
