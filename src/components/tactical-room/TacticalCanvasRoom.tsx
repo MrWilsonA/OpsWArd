@@ -45,19 +45,24 @@ const NPC_RADIUS_X = 13;
 const NPC_RADIUS_Y = 9;
 
 const SPRITE_SIZE = 64;
-const getMapZoom = (map: WorldMapId) => (map === 'outdoor' ? 1.45 : 1.0);
+const getMapZoom = (map: WorldMapId) => {
+  if (map === 'outdoor') return 1.45;
+  if (map === 'indoor') return 1.0;
+  // Satellite interior single rooms (greenhouse, relay, workshop, lodge, cottage)
+  // Zoomed out to 0.72x for a wide, comfortable view of the whole room
+  return 0.72;
+};
+
 const getSpriteMetrics = (map: WorldMapId) => {
   if (map === 'outdoor') {
-    return { drawSize: 44, anchorY: 36 };
+    return { drawSize: 44, anchorY: 36 }; // 44px * 1.45 zoom = ~64px on screen
   }
   if (map === 'indoor') {
-    return { drawSize: 64, anchorY: 52 };
+    return { drawSize: 64, anchorY: 52 }; // 64px * 1.0 zoom = 64px on screen
   }
-  // For satellite interior facilities (greenhouse, relay, workshop, lodge, cottage)
-  // 80px drawSize (anchorY: 65) creates the exact golden ratio with the furniture:
-  // character comfortably sits in the office chair, stands taller than the desk surface and plants,
-  // matching the Central Operations Hall proportion perfectly without cramping the camera view!
-  return { drawSize: 80, anchorY: 65 };
+  // Satellite interior facilities: 88px world size with 0.72x zoom
+  // gives exact 63.4px (~64px) screen character size and perfect furniture proportions!
+  return { drawSize: 88, anchorY: 71 };
 };
 const WALK_SPEED = 148;
 const NAV_GRID = 8;
