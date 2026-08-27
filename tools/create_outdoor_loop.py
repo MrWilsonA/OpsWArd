@@ -12,12 +12,12 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "public" / "game-assets"
-SOURCE = ASSETS / "opsward-outdoor-v2-source.png"
-BASE = ASSETS / "opsward-outdoor-v3.png"
-FRAME_DIR = ASSETS / "outdoor-loop-frames"
-TILE_DIR = ASSETS / "outdoor-hires-tiles"
-GIF = ASSETS / "opsward-outdoor-loop.gif"
-PREVIEW = ASSETS / "opsward-outdoor-loop-preview.png"
+SOURCE = ASSETS / "opsward-outdoor-v4-source.png"
+BASE = ASSETS / "opsward-outdoor-v4.png"
+FRAME_DIR = ASSETS / "outdoor-v4-loop-frames"
+TILE_DIR = ASSETS / "outdoor-v4-hires-tiles"
+GIF = ASSETS / "opsward-outdoor-v4-loop.gif"
+PREVIEW = ASSETS / "opsward-outdoor-v4-loop-preview.png"
 
 WIDTH, HEIGHT = 1536, 1024
 FRAME_COUNT = 10
@@ -54,9 +54,8 @@ def main() -> None:
     red, green, blue = pixels[..., 0], pixels[..., 1], pixels[..., 2]
 
     water_regions = roi_mask([
-        (350, 0, 535, 390),      # north stream
-        (0, 270, 280, 1024),     # west stream and pools
-        (510, 775, 1010, 1024),  # south pond
+        (0, 0, 160, 1024),       # west river
+        (610, 410, 965, 620),    # central pond
     ])
     water_colour = (
         (blue.astype(np.int16) >= red.astype(np.int16) + 4)
@@ -67,10 +66,10 @@ def main() -> None:
     water = water_regions & water_colour
 
     foliage_regions = roi_mask([
-        (0, 0, 1536, 210),
-        (0, 140, 570, 1024),
-        (940, 120, 1536, 1024),
-        (360, 330, 1180, 790),
+        (0, 0, 1536, 185),
+        (0, 120, 330, 1024),
+        (1260, 100, 1536, 1024),
+        (300, 260, 1260, 980),
     ])
     foliage_colour = (
         (green.astype(np.int16) >= red.astype(np.int16) + 10)
@@ -81,9 +80,9 @@ def main() -> None:
     foliage = foliage_regions & foliage_colour
 
     pollen_origins = [
-        (560, 382), (676, 348), (835, 372), (980, 418),
-        (477, 530), (1062, 552), (585, 676), (920, 690),
-        (408, 806), (1120, 770), (718, 744), (876, 830),
+        (560, 330), (760, 290), (980, 350), (1160, 420),
+        (430, 500), (1040, 555), (540, 650), (950, 680),
+        (360, 800), (1180, 760), (690, 745), (860, 850),
     ]
 
     frames: list[Image.Image] = []

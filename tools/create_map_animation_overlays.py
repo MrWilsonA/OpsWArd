@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "public" / "game-assets"
-OUT = ASSETS / "map-animation-overlays"
+OUT = ASSETS / "map-animation-overlays-v2"
 FRAME_COUNT = 10
 
 MAPS = {
@@ -29,8 +29,8 @@ MAPS = {
         "plants": [], "particles": [],
     },
     "lodge": {
-        "source": ASSETS / "lodge-interior-v1.png",
-        "screens": [(625, 40, 900, 180), (610, 210, 900, 360), (455, 650, 1085, 850)],
+        "source": ASSETS / "lodge-interior-v2.png",
+        "screens": [(640, 45, 900, 210), (55, 175, 190, 775), (640, 295, 830, 470), (370, 610, 570, 790), (900, 610, 1085, 790)],
         "plants": [], "particles": [],
     },
     "cottage": {
@@ -57,11 +57,11 @@ def save_overlay(path: Path, rgb: np.ndarray, changed: np.ndarray) -> None:
 
 
 def build_outdoor() -> None:
-    base = np.asarray(Image.open(ASSETS / "opsward-outdoor-v3.png").convert("RGB"))
+    base = np.asarray(Image.open(ASSETS / "opsward-outdoor-v4.png").convert("RGB"))
     target = OUT / "outdoor"
     target.mkdir(parents=True, exist_ok=True)
     for index in range(FRAME_COUNT):
-        frame = np.asarray(Image.open(ASSETS / "outdoor-loop-frames" / f"outdoor-{index:02d}.png").convert("RGB"))
+        frame = np.asarray(Image.open(ASSETS / "outdoor-v4-loop-frames" / f"outdoor-{index:02d}.png").convert("RGB"))
         changed = np.any(frame != base, axis=2)
         save_overlay(target / f"{index:02d}.png", frame, changed)
 

@@ -1,16 +1,16 @@
 {
-  "floors": [{ "x1": 38, "y1": 38, "x2": 1498, "y2": 944 }],
+  "floors": [{ "x1": 35, "y1": 35, "x2": 1495, "y2": 950 }],
   "obstacles": [
-    { "id": "northwest-nodes", "x1": 35, "y1": 35, "x2": 440, "y2": 365 },
-    { "id": "north-command", "x1": 485, "y1": 35, "x2": 1050, "y2": 195 },
-    { "id": "commander-desk", "x1": 610, "y1": 205, "x2": 915, "y2": 385 },
-    { "id": "northeast-simulation", "x1": 1100, "y1": 35, "x2": 1500, "y2": 370 },
-    { "id": "west-ledger", "x1": 35, "y1": 380, "x2": 435, "y2": 595 },
-    { "id": "east-ledger", "x1": 1100, "y1": 385, "x2": 1500, "y2": 595 },
-    { "id": "quorum-table", "x1": 610, "y1": 430, "x2": 930, "y2": 690, "shape": "ellipse" },
-    { "id": "node-desk-a", "x1": 455, "y1": 650, "x2": 720, "y2": 855 },
-    { "id": "node-desk-b", "x1": 815, "y1": 650, "x2": 1085, "y2": 855 },
-    { "id": "fireplace-debrief", "x1": 35, "y1": 605, "x2": 425, "y2": 930 },
-    { "id": "standby-debrief", "x1": 1110, "y1": 605, "x2": 1495, "y2": 930 }
+    { "id": "northwest-audit-shelves", "x1": 38, "y1": 38, "x2": 450, "y2": 165 },
+    { "id": "commander-dais", "x1": 535, "y1": 38, "x2": 965, "y2": 250 },
+    { "id": "fireplace-debrief", "x1": 1040, "y1": 38, "x2": 1425, "y2": 315 },
+    { "id": "audit-timeline", "x1": 42, "y1": 180, "x2": 205, "y2": 825 },
+    { "id": "node-green", "x1": 635, "y1": 285, "x2": 835, "y2": 480, "shape": "ellipse" },
+    { "id": "node-blue", "x1": 370, "y1": 605, "x2": 585, "y2": 805, "shape": "ellipse" },
+    { "id": "node-red", "x1": 895, "y1": 605, "x2": 1110, "y2": 805, "shape": "ellipse" },
+    { "id": "annex-north-shelves", "x1": 1270, "y1": 315, "x2": 1495, "y2": 500 },
+    { "id": "annex-west-shelves", "x1": 1180, "y1": 555, "x2": 1320, "y2": 900 },
+    { "id": "annex-east-shelves", "x1": 1390, "y1": 520, "x2": 1495, "y2": 900 },
+    { "id": "annex-reading-desk", "x1": 1345, "y1": 420, "x2": 1465, "y2": 535 }
   ]
 }

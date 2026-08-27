@@ -306,13 +306,65 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
     return () => window.removeEventListener('resize', updateSize);
   }, [isOpen, isSidebarOpen]);
 
-  // Spacebar Pan Event Listeners
+  // Delete Selected
+  const deleteSelected = useCallback(() => {
+    if (selectedIndex === null) return;
+    recordHistory();
+    if (selectedType === 'floor') {
+      setFloors((prev) => prev.filter((_, i) => i !== selectedIndex));
+      setStatusMsg({ text: 'Deleted floor box', type: 'info' });
+    } else if (selectedType === 'obstacle') {
+      const name = obstacles[selectedIndex]?.id;
+      setObstacles((prev) => prev.filter((_, i) => i !== selectedIndex));
+      setStatusMsg({ text: `Deleted obstacle: ${name}`, type: 'info' });
+    }
+    setSelectedType(null);
+    setSelectedIndex(null);
+    setTimeout(() => setStatusMsg(null), 2000);
+  }, [obstacles, recordHistory, selectedIndex, selectedType]);
+
+  // Duplicate Selected
+  const duplicateSelected = useCallback(() => {
+    if (!selectedItem || selectedIndex === null) return;
+    recordHistory();
+    const offset = 16;
+    if (selectedType === 'floor') {
+      const f = selectedItem as FloorRect;
+      const copy: FloorRect = { x1: f.x1 + offset, y1: f.y1 + offset, x2: f.x2 + offset, y2: f.y2 + offset };
+      setFloors((prev) => [...prev, copy]);
+      setSelectedIndex(floors.length);
+    } else if (selectedType === 'obstacle') {
+      const ob = selectedItem as ObstacleRect;
+      const copy: ObstacleRect = {
+        ...ob,
+        id: `${ob.id}-copy`,
+        x1: ob.x1 + offset,
+        y1: ob.y1 + offset,
+        x2: ob.x2 + offset,
+        y2: ob.y2 + offset,
+      };
+      setObstacles((prev) => [...prev, copy]);
+      setSelectedIndex(obstacles.length);
+    }
+    setStatusMsg({ text: 'Duplicated collider (Ctrl+D)', type: 'success' });
+    setTimeout(() => setStatusMsg(null), 2000);
+  }, [floors.length, obstacles.length, recordHistory, selectedIndex, selectedItem, selectedType]);
+
+  // Spacebar Pan & Keyboard Shortcut Listeners
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input
       if ((e.target as HTMLElement).tagName === 'INPUT') return;
+
+      // Duplicate: Ctrl+D / Cmd+D
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        e.stopPropagation();
+        duplicateSelected();
+        return;
+      }
 
       // Spacebar to pan
       if (e.code === 'Space' && !e.repeat) {
@@ -370,7 +422,7 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isOpen, handleUndo, handleRedo, selectedIndex, drawingBox, selectedItem, onClose]);
+  }, [isOpen, handleUndo, handleRedo, duplicateSelected, deleteSelected, selectedIndex, drawingBox, selectedItem, onClose]);
 
   // Canvas Render Loop
   useEffect(() => {
@@ -768,50 +820,6 @@ export const ColliderEditorModal: React.FC<ColliderEditorModalProps> = ({
       y: mouseY - ((mouseY - pan.y) / zoom) * newZoom,
     });
     setZoom(newZoom);
-  };
-
-  // Delete Selected
-  const deleteSelected = () => {
-    if (selectedIndex === null) return;
-    recordHistory();
-    if (selectedType === 'floor') {
-      setFloors((prev) => prev.filter((_, i) => i !== selectedIndex));
-      setStatusMsg({ text: 'Deleted floor box', type: 'info' });
-    } else if (selectedType === 'obstacle') {
-      const name = obstacles[selectedIndex]?.id;
-      setObstacles((prev) => prev.filter((_, i) => i !== selectedIndex));
-      setStatusMsg({ text: `Deleted obstacle: ${name}`, type: 'info' });
-    }
-    setSelectedType(null);
-    setSelectedIndex(null);
-    setTimeout(() => setStatusMsg(null), 2000);
-  };
-
-  // Duplicate Selected
-  const duplicateSelected = () => {
-    if (!selectedItem || selectedIndex === null) return;
-    recordHistory();
-    const offset = 16;
-    if (selectedType === 'floor') {
-      const f = selectedItem as FloorRect;
-      const copy: FloorRect = { x1: f.x1 + offset, y1: f.y1 + offset, x2: f.x2 + offset, y2: f.y2 + offset };
-      setFloors((prev) => [...prev, copy]);
-      setSelectedIndex(floors.length);
-    } else if (selectedType === 'obstacle') {
-      const ob = selectedItem as ObstacleRect;
-      const copy: ObstacleRect = {
-        ...ob,
-        id: `${ob.id}-copy`,
-        x1: ob.x1 + offset,
-        y1: ob.y1 + offset,
-        x2: ob.x2 + offset,
-        y2: ob.y2 + offset,
-      };
-      setObstacles((prev) => [...prev, copy]);
-      setSelectedIndex(obstacles.length);
-    }
-    setStatusMsg({ text: 'Duplicated collider box', type: 'success' });
-    setTimeout(() => setStatusMsg(null), 2000);
   };
 
   // Jump to specific Room

@@ -44,8 +44,16 @@ const NPC_RADIUS_X = 13;
 const NPC_RADIUS_Y = 9;
 
 const SPRITE_SIZE = 64;
-const SPRITE_DRAW_SIZE = 44;
-const SPRITE_ANCHOR_Y = 36;
+// Exterior landmarks are drawn at a broader world scale, so characters stay
+// compact there. Interior rooms use the original 64px presentation so desks,
+// seats, and characters keep their earlier proportions.
+const OUTDOOR_SPRITE_DRAW_SIZE = 44;
+const INTERIOR_SPRITE_DRAW_SIZE = 64;
+const SPRITE_ANCHOR_RATIO = 36 / 44;
+const getSpriteMetrics = (map: WorldMapId) => {
+  const drawSize = map === 'outdoor' ? OUTDOOR_SPRITE_DRAW_SIZE : INTERIOR_SPRITE_DRAW_SIZE;
+  return { drawSize, anchorY: Math.round(drawSize * SPRITE_ANCHOR_RATIO) };
+};
 const WALK_SPEED = 148;
 const NAV_GRID = 8;
 const CAMPUS_FRAME_COUNT = 10;
@@ -65,11 +73,11 @@ const INDOOR_NPCS: NpcSpot[] = [
 ];
 
 const OUTDOOR_NPC_SPOTS: NpcSpot[] = [
-  { id: 'alex', x: 620, y: 395 },
-  { id: 'rose', x: 885, y: 402 },
-  { id: 'andri', x: 585, y: 535 },
-  { id: 'melinda', x: 975, y: 525 },
-  { id: 'yuki', x: 755, y: 705 },
+  { id: 'alex', x: 570, y: 365 },
+  { id: 'rose', x: 990, y: 320 },
+  { id: 'andri', x: 580, y: 620 },
+  { id: 'melinda', x: 1040, y: 630 },
+  { id: 'yuki', x: 790, y: 630 },
 ];
 
 const GREENHOUSE_NPCS: NpcSpot[] = [
@@ -82,7 +90,7 @@ const WORKSHOP_NPCS: NpcSpot[] = [
   { id: 'christ', x: 500, y: 310 }, { id: 'budi', x: 1015, y: 610 }, { id: 'dzuky', x: 760, y: 880 },
 ];
 const LODGE_NPCS: NpcSpot[] = [
-  { id: 'eric', x: 760, y: 405 }, { id: 'yanto', x: 510, y: 580 }, { id: 'jesfer_normal', x: 1020, y: 580 },
+  { id: 'eric', x: 760, y: 525 }, { id: 'yanto', x: 500, y: 560 }, { id: 'jesfer_normal', x: 1010, y: 560 },
 ];
 const COTTAGE_NPCS: NpcSpot[] = [
   { id: 'jesfer_clown', x: 745, y: 380 }, { id: 'olimar', x: 480, y: 700 }, { id: 'wilson_model', x: 925, y: 760 },
@@ -98,9 +106,9 @@ const MAP_NPCS: Record<WorldMapId, NpcSpot[]> = {
   cottage: COTTAGE_NPCS,
 };
 
-const OUTDOOR_SPAWN = { x: 748, y: 342 };
+const OUTDOOR_SPAWN = { x: 335, y: 330 };
 const INDOOR_EXIT = { x: 752, y: 958, radius: 55 };
-const OUTDOOR_HALL_DOOR = { x: 748, y: 312, radius: 74 };
+const OUTDOOR_HALL_DOOR = { x: 335, y: 305, radius: 76 };
 const INTERIOR_EXIT = { x: 768, y: 930, radius: 78 };
 
 const MAP_SPAWNS: Record<WorldMapId, TacticalPosition> = {
@@ -111,19 +119,18 @@ const MAP_SPAWNS: Record<WorldMapId, TacticalPosition> = {
 };
 
 const OUTDOOR_RETURN_SPAWNS: Partial<Record<WorldMapId, TacticalPosition>> = {
-  indoor: { x: 748, y: 342 }, lodge: { x: 250, y: 360 }, relay: { x: 1270, y: 330 },
-  cottage: { x: 1220, y: 585 }, workshop: { x: 590, y: 900 }, greenhouse: { x: 1168, y: 948 },
+  indoor: { x: 335, y: 330 }, lodge: { x: 1250, y: 640 }, relay: { x: 1225, y: 325 },
+  cottage: { x: 1240, y: 945 }, workshop: { x: 340, y: 915 }, greenhouse: { x: 810, y: 920 },
 };
 
 const OUTDOOR_ROOMS: Room[] = [
-  { name: 'Incident Command Hall', x1: 545, y1: 40, x2: 970, y2: 340 },
-  { name: 'Creekside Lodge', x1: 70, y1: 70, x2: 400, y2: 380 },
-  { name: 'Network Relay Yard', x1: 1080, y1: 45, x2: 1440, y2: 355 },
-  { name: 'Responder Cottage', x1: 60, y1: 430, x2: 390, y2: 720 },
-  { name: 'Training House', x1: 1050, y1: 340, x2: 1445, y2: 650 },
-  { name: 'Tool Workshop', x1: 250, y1: 680, x2: 610, y2: 990 },
-  { name: 'Oakheart Greenhouse', x1: 970, y1: 650, x2: 1380, y2: 990 },
-  { name: 'Command Plaza', x1: 520, y1: 335, x2: 990, y2: 720 },
+  { name: 'Incident Command Courtyard', x1: 150, y1: 40, x2: 650, y2: 425 },
+  { name: 'Network Relay Trail', x1: 1040, y1: 45, x2: 1450, y2: 350 },
+  { name: 'Raft Lodge Woodland', x1: 1070, y1: 350, x2: 1430, y2: 660 },
+  { name: 'Saga Workshop Yard', x1: 190, y1: 620, x2: 560, y2: 970 },
+  { name: 'Oakheart Greenhouse Garden', x1: 620, y1: 610, x2: 990, y2: 980 },
+  { name: 'DLQ Cottage Trail', x1: 1060, y1: 680, x2: 1440, y2: 980 },
+  { name: 'Oakheart Loop Trail', x1: 250, y1: 280, x2: 1190, y2: 760 },
 ];
 
 const ROOMS: Room[] = [
@@ -149,11 +156,11 @@ const INTERACTABLES: Interactable[] = [
 
 const OUTDOOR_INTERACTABLES: Interactable[] = [
   { id: 'enter-hall', x: OUTDOOR_HALL_DOOR.x, y: OUTDOOR_HALL_DOOR.y, radius: OUTDOOR_HALL_DOOR.radius, label: 'Enter Incident Command Hall', message: 'Entering the indoor operations floor.', targetMap: 'indoor' },
-  { id: 'greenhouse', x: 1168, y: 948, radius: 88, label: 'Enter Oakheart Greenhouse', message: 'Opening environmental telemetry greenhouse.', targetMap: 'greenhouse' },
-  { id: 'relay', x: 1274, y: 330, radius: 82, label: 'Enter SFU Network Relay', message: 'Opening spatial-media relay lab.', targetMap: 'relay' },
-  { id: 'workshop', x: 590, y: 900, radius: 88, label: 'Enter Saga Workshop', message: 'Opening playbook orchestration workshop.', targetMap: 'workshop' },
-  { id: 'lodge', x: 250, y: 360, radius: 82, label: 'Enter Raft Audit Lodge', message: 'Opening consensus and audit lodge.', targetMap: 'lodge' },
-  { id: 'cottage', x: 1220, y: 585, radius: 82, label: 'Enter DLQ Replay Cottage', message: 'Opening telemetry and replay cottage.', targetMap: 'cottage' },
+  { id: 'greenhouse', x: 810, y: 920, radius: 82, label: 'Enter Oakheart Greenhouse', message: 'Opening environmental telemetry greenhouse.', targetMap: 'greenhouse' },
+  { id: 'relay', x: 1225, y: 325, radius: 82, label: 'Enter SFU Network Relay', message: 'Opening spatial-media relay lab.', targetMap: 'relay' },
+  { id: 'workshop', x: 340, y: 915, radius: 82, label: 'Enter Saga Workshop', message: 'Opening playbook orchestration workshop.', targetMap: 'workshop' },
+  { id: 'lodge', x: 1250, y: 640, radius: 82, label: 'Enter Raft Audit Lodge', message: 'Opening consensus and audit lodge.', targetMap: 'lodge' },
+  { id: 'cottage', x: 1240, y: 945, radius: 82, label: 'Enter DLQ Replay Cottage', message: 'Opening telemetry and replay cottage.', targetMap: 'cottage' },
 ];
 
 const INTERIOR_INTERACTABLES: Record<Exclude<WorldMapId, 'indoor' | 'outdoor'>, Interactable[]> = {
@@ -444,7 +451,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       for (let tileX = 0; tileX < 2; tileX += 1) {
         const tileIndex = tileY * 2 + tileX;
         pending.push(
-          loadImage(`/game-assets/outdoor-hires-tiles/outdoor-${tileX}-${tileY}.png`)
+          loadImage(`/game-assets/outdoor-v4-hires-tiles/outdoor-${tileX}-${tileY}.png`)
             .then((image) => { assetsRef.current.outdoorTiles[tileIndex] = image; }),
         );
       }
@@ -458,7 +465,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       assetsRef.current.overlays[mapId] = [];
       for (let index = 0; index < OUTDOOR_FRAME_COUNT; index += 1) {
         pending.push(
-          loadImage(`/game-assets/map-animation-overlays/${mapId}/${String(index).padStart(2, '0')}.png`)
+          loadImage(`/game-assets/map-animation-overlays-v2/${mapId}/${String(index).padStart(2, '0')}.png`)
             .then((image) => { assetsRef.current.overlays[mapId]![index] = image; }),
         );
       }
@@ -596,6 +603,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       y: number,
       alpha: number,
     ) => {
+      const { drawSize, anchorY } = getSpriteMetrics(activeMapRef.current);
       const buffer = spriteBufferRef.current;
       const bufferContext = buffer?.getContext('2d');
       if (!buffer || !bufferContext) return;
@@ -626,8 +634,8 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       context.globalAlpha = alpha;
       context.drawImage(
         buffer,
-        Math.round(x - SPRITE_DRAW_SIZE / 2), Math.round(y - SPRITE_ANCHOR_Y),
-        SPRITE_DRAW_SIZE, SPRITE_DRAW_SIZE,
+        Math.round(x - drawSize / 2), Math.round(y - anchorY),
+        drawSize, drawSize,
       );
       context.restore();
     };
@@ -774,10 +782,11 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       const occluderLayer = occluderLayerRef.current;
       let hiddenByFurniture = false;
       if (currentMap === 'indoor' && occluderLayer && occluderFrameRef.current >= 0) {
+        const { drawSize, anchorY } = getSpriteMetrics(currentMap);
         const playerBox = {
-          x1: position.x - SPRITE_DRAW_SIZE / 4,
-          y1: position.y - SPRITE_ANCHOR_Y + 6,
-          x2: position.x + SPRITE_DRAW_SIZE / 4,
+          x1: position.x - drawSize / 4,
+          y1: position.y - anchorY + 6,
+          x2: position.x + drawSize / 4,
           y2: position.y + 10,
         };
         OCCLUDERS.forEach((object) => {
