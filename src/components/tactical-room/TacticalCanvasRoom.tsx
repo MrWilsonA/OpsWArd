@@ -64,7 +64,13 @@ const getSpriteMetrics = (map: WorldMapId) => {
   // gives exact 63.4px (~64px) screen character size and perfect furniture proportions!
   return { drawSize: 88, anchorY: 71 };
 };
-const WALK_SPEED = 148;
+
+const getWalkSpeed = (map: WorldMapId, isRunning: boolean) => {
+  const zoom = getMapZoom(map);
+  // Consistent screen velocity across all zooms: ~190 px/s walk, ~330 px/s run
+  const screenVelocity = isRunning ? 330 : 190;
+  return screenVelocity / zoom;
+};
 const NAV_GRID = 8;
 const CAMPUS_FRAME_COUNT = 10;
 const CAMPUS_FRAME_DURATION = 150;
@@ -466,11 +472,11 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   }, [fetchLiveColliders]);
 
   useEffect(() => {
-    const movementKeys = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright']);
+    const movementKeys = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright', 'shift']);
     const keyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
       if (movementKeys.has(key)) {
-        event.preventDefault();
+        if (key !== 'shift') event.preventDefault();
         keysRef.current.add(key);
         targetRef.current = null;
         pathRef.current = [];
@@ -490,7 +496,9 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         noteTimerRef.current = setTimeout(() => setInteractionNote(''), 4200);
       }
     };
-    const keyUp = (event: KeyboardEvent) => keysRef.current.delete(event.key.toLowerCase());
+    const keyUp = (event: KeyboardEvent) => {
+      keysRef.current.delete(event.key.toLowerCase());
+    };
     window.addEventListener('keydown', keyDown);
     window.addEventListener('keyup', keyUp);
     return () => {
@@ -660,9 +668,11 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       if (movingRef.current) {
         if (Math.abs(dx) > Math.abs(dy)) directionRef.current = dx > 0 ? 'right' : 'left';
         else directionRef.current = dy > 0 ? 'down' : 'up';
+        const isRunning = keys.has('shift');
+        const currentSpeed = getWalkSpeed(currentMap, isRunning);
         const magnitude = Math.hypot(dx, dy) || 1;
-        const stepX = (dx / magnitude) * WALK_SPEED * delta;
-        const stepY = (dy / magnitude) * WALK_SPEED * delta;
+        const stepX = (dx / magnitude) * currentSpeed * delta;
+        const stepY = (dy / magnitude) * currentSpeed * delta;
         const current = positionRef.current;
         let nextX = current.x;
         let nextY = current.y;
