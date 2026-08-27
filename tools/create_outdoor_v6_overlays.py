@@ -8,8 +8,8 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "public" / "game-assets"
-TILES = ASSETS / "outdoor-v10-seamless-tiles"
-OUTPUT = ASSETS / "outdoor-v10-hires-overlays"
+TILES = ASSETS / "outdoor-v11-seamless-tiles"
+OUTPUT = ASSETS / "outdoor-v11-hires-overlays"
 FRAME_COUNT = 10
 TILE_WIDTH, TILE_HEIGHT = 1536, 1024
 

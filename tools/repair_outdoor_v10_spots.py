@@ -23,7 +23,15 @@ SPOTS = {
 MASK_BOXES = {
     "grass-path": (70, 320, 954, 704),
     "river-corner": (300, 300, 724, 724),
-    "cottage-edge": (290, 315, 734, 709),
+    # Stop before the cottage silhouette. The previous wider mask crossed the
+    # facade and made the otherwise intact house look like two joined images.
+    "cottage-edge": (320, 390, 555, 680),
+}
+
+MASK_BLURS = {
+    "grass-path": 72,
+    "river-corner": 72,
+    "cottage-edge": 24,
 }
 
 
@@ -34,10 +42,12 @@ def prepare() -> None:
         master.crop(box).save(SOURCES / f"{name}.png", optimize=True)
 
 
-def feathered_mask(size: tuple[int, int], box: tuple[int, int, int, int]) -> Image.Image:
+def feathered_mask(
+    size: tuple[int, int], box: tuple[int, int, int, int], blur: int = 72
+) -> Image.Image:
     mask = Image.new("L", size, 0)
-    ImageDraw.Draw(mask).rounded_rectangle(box, radius=120, fill=255)
-    return mask.filter(ImageFilter.GaussianBlur(72))
+    ImageDraw.Draw(mask).rounded_rectangle(box, radius=min(120, blur * 3), fill=255)
+    return mask.filter(ImageFilter.GaussianBlur(blur))
 
 
 def load_repair(name: str) -> Image.Image:
@@ -54,7 +64,7 @@ def compose_alpha() -> Image.Image:
     master = Image.open(MASTER).convert("RGB")
     for name, crop_box in SPOTS.items():
         repair = load_repair(name)
-        mask = feathered_mask(repair.size, MASK_BOXES[name])
+        mask = feathered_mask(repair.size, MASK_BOXES[name], MASK_BLURS[name])
         master.paste(repair, (crop_box[0], crop_box[1]), mask)
     return master
 
@@ -63,7 +73,7 @@ def compose_clone() -> Image.Image:
     master = cv2.imread(str(MASTER), cv2.IMREAD_COLOR)
     for name, crop_box in SPOTS.items():
         repair = cv2.cvtColor(np.asarray(load_repair(name)), cv2.COLOR_RGB2BGR)
-        mask_image = feathered_mask((1024, 1024), MASK_BOXES[name])
+        mask_image = feathered_mask((1024, 1024), MASK_BOXES[name], MASK_BLURS[name])
         mask = np.asarray(mask_image, dtype=np.uint8)
         center = ((crop_box[0] + crop_box[2]) // 2, (crop_box[1] + crop_box[3]) // 2)
         master = cv2.seamlessClone(repair, master, mask, center, cv2.NORMAL_CLONE)
