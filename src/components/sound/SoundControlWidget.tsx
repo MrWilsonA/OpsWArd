@@ -158,7 +158,10 @@ export const SoundControlWidget: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Trees className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-xs font-bold text-neutral-200">SFX · Nature Ambient</span>
+                <span className="text-xs font-bold text-neutral-200">SFX · Nature Wind</span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
+                  Outdoor Only
+                </span>
               </div>
               <button
                 onClick={() => soundManager.toggleNatureMute()}

@@ -396,6 +396,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     const previousMap = activeMapRef.current;
     activeMapRef.current = nextMap;
     setActiveMap(nextMap);
+    soundManager.setMap(nextMap);
     const zoom = getMapZoom(nextMap);
     const visibleWidth = VIEW_WIDTH / zoom;
     const visibleHeight = VIEW_HEIGHT / zoom;
@@ -414,6 +415,10 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     setNearbyInteractable(null);
     setInteractionNote(`${MAP_TITLES[nextMap]} loaded.`);
   }, []);
+
+  useEffect(() => {
+    soundManager.setMap(activeMap);
+  }, [activeMap]);
 
   useEffect(() => {
     let cancelled = false;

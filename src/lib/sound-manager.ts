@@ -21,6 +21,7 @@ class SoundManager {
   private nature: HTMLAudioElement | null = null;
   private running: HTMLAudioElement | null = null;
   private isInitialized = false;
+  public currentMap: string = 'indoor';
 
   public settings: AudioSettings = {
     bgmVolume: 0.35,
@@ -93,7 +94,7 @@ class SoundManager {
     this.bgm.loop = true;
     this.bgm.preload = 'auto';
 
-    // 2. Nature Ambient SFX (Looping)
+    // 2. Nature Ambient SFX (Looping, only active when outdoors)
     this.nature = new Audio('/sound/nature.mp3');
     this.nature.loop = true;
     this.nature.preload = 'auto';
@@ -105,9 +106,26 @@ class SoundManager {
 
     this.applyVolumes();
 
-    // Start playing BGM and Nature ambient
+    // Start playing BGM and Nature ambient (if outdoors)
     this.playBgm();
     this.playNature();
+  }
+
+  public setMap(map: string) {
+    this.currentMap = map;
+    this.applyVolumes();
+    if (this.nature) {
+      if (map === 'outdoor') {
+        if (this.nature.paused) {
+          this.nature.play().catch(() => {});
+        }
+      } else {
+        if (!this.nature.paused) {
+          this.nature.pause();
+          this.nature.currentTime = 0;
+        }
+      }
+    }
   }
 
   public playBgm() {
@@ -138,6 +156,10 @@ class SoundManager {
 
   public playNature() {
     if (!this.nature) return;
+    if (this.currentMap !== 'outdoor') {
+      this.nature.pause();
+      return;
+    }
     this.applyVolumes();
     this.nature.play().catch(() => {
       // Blocked until user interaction
@@ -167,7 +189,10 @@ class SoundManager {
       this.bgm.volume = Math.max(0, Math.min(1, effective));
     }
     if (this.nature) {
-      const effective = this.settings.masterMuted || this.settings.natureMuted ? 0 : this.settings.natureVolume;
+      const isIndoor = this.currentMap !== 'outdoor';
+      const effective = (this.settings.masterMuted || this.settings.natureMuted || isIndoor)
+        ? 0
+        : this.settings.natureVolume;
       this.nature.volume = Math.max(0, Math.min(1, effective));
     }
     if (this.running) {
