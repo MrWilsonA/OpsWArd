@@ -24,23 +24,8 @@ export const PixelSplash: React.FC<PixelSplashProps> = ({ onEnter, onOpenGuide }
       </div>
 
       <div className="pixel-splash__scene" aria-label="Pixel-art representation of the OpsWArd campus">
-        <div className="splash-moon" />
-        <div className="splash-cloud cloud-a" /><div className="splash-cloud cloud-b" />
-        <div className="splash-tree tree-a"><i /><b /></div>
-        <div className="splash-tree tree-b"><i /><b /></div>
-        <div className="splash-tree tree-c"><i /><b /></div>
-        <div className="splash-tree tree-d"><i /><b /></div>
-        <div className="splash-building">
-          <div className="splash-building__roof" />
-          <div className="splash-building__sign">EOC</div>
-          <div className="splash-building__window window-a" /><div className="splash-building__window window-b" />
-          <div className="splash-building__door" />
-          <div className="splash-building__signal"><i /><i /><i /></div>
-        </div>
-        <div className="splash-path" />
-        <div className="splash-avatar avatar-a"><i /></div>
-        <div className="splash-avatar avatar-b"><i /></div>
-        <div className="splash-avatar avatar-c"><i /></div>
+        <img src="/game-assets/splash-oakheart-front-v2.png" alt="George, Helina, and Enjidiren standing before Oakheart Operations Hall at dusk" />
+        <div className="pixel-splash__scene-shade" />
       </div>
 
       <div className="pixel-splash__intro">

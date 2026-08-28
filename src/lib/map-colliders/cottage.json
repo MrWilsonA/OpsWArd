@@ -387,6 +387,16 @@
       "shape": "rect",
       "through": false,
       "occlude": true
+    },
+    {
+      "id": "southeast-planter (3)",
+      "x1": 636,
+      "y1": 841,
+      "x2": 659,
+      "y2": 945,
+      "shape": "rect",
+      "through": false,
+      "occlude": true
     }
   ]
 }
