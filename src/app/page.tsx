@@ -36,7 +36,7 @@ export default function OpsWardDashboard() {
       <header className="cozy-topbar sticky top-0 z-30 px-4 py-3 lg:px-8">
         <div className="max-w-[1500px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Logo & Platform Info */}
-          <div className="flex items-center space-x-3.5">
+          <div className="flex items-center space-x-3.5 shrink-0">
             <div className="cozy-logo-mark">
               <div className="w-full h-full flex items-center justify-center">
                 <ShieldAlert className="w-5 h-5 text-[#f6d177]" />
@@ -58,52 +58,52 @@ export default function OpsWardDashboard() {
           </div>
 
           {/* Active Navigation Tabs */}
-          <div className="cozy-nav flex items-center space-x-1.5 p-1 text-xs">
+          <div className="cozy-nav shrink-0">
             <button
               onClick={() => setActiveTab('war-room')}
-              className={`px-3.5 py-1.5 rounded-lg flex items-center space-x-2 transition-all ${
+              className={`flex items-center space-x-1.5 transition-all ${
                 activeTab === 'war-room'
                   ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Compass className="w-3.5 h-3.5" />
+              <Compass className="w-3 h-3" />
               <span>WAR-ROOM & COMMS</span>
             </button>
 
             <button
               onClick={() => setActiveTab('consensus')}
-              className={`px-3.5 py-1.5 rounded-lg flex items-center space-x-2 transition-all ${
+              className={`flex items-center space-x-1.5 transition-all ${
                 activeTab === 'consensus'
                   ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
+              <Layers className="w-3 h-3" />
               <span>RAFT CONSENSUS</span>
             </button>
 
             <button
               onClick={() => setActiveTab('playbooks')}
-              className={`px-3.5 py-1.5 rounded-lg flex items-center space-x-2 transition-all ${
+              className={`flex items-center space-x-1.5 transition-all ${
                 activeTab === 'playbooks'
                   ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <FileCode className="w-3.5 h-3.5" />
+              <FileCode className="w-3 h-3" />
               <span>SAGA PLAYBOOKS</span>
             </button>
 
             <button
               onClick={() => setActiveTab('telemetry')}
-              className={`px-3.5 py-1.5 rounded-lg flex items-center space-x-2 transition-all ${
+              className={`flex items-center space-x-1.5 transition-all ${
                 activeTab === 'telemetry'
                   ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <Activity className="w-3.5 h-3.5" />
+              <Activity className="w-3 h-3" />
               <span>TELEMETRY & DLQ</span>
             </button>
           </div>
