@@ -7,6 +7,7 @@ import { SpatialCommsHub } from '@/components/communication/SpatialCommsHub';
 import { RaftConsensusEngine } from '@/components/raft/RaftConsensusEngine';
 import { PlaybookSagaOrchestrator } from '@/components/playbook/PlaybookSagaOrchestrator';
 import { TelemetryDlqPipeline } from '@/components/telemetry/TelemetryDlqPipeline';
+import { OpsWardGuidebook } from '@/components/guide/OpsWardGuidebook';
 import { 
   ShieldAlert, 
   Radio, 
@@ -19,7 +20,8 @@ import {
   Zap,
   Globe,
   Flame,
-  CheckCircle2
+  CheckCircle2,
+  BookOpenText
 } from 'lucide-react';
 
 export default function OpsWardDashboard() {
@@ -28,7 +30,7 @@ export default function OpsWardDashboard() {
   );
   const [nearbyResponders, setNearbyResponders] = useState<{ char: CharacterProfile; distance: number; volume: number }[]>([]);
   const [isPodiumBroadcasting, setIsPodiumBroadcasting] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'war-room' | 'consensus' | 'playbooks' | 'telemetry'>('war-room');
+  const [activeTab, setActiveTab] = useState<'war-room' | 'consensus' | 'playbooks' | 'telemetry' | 'guidebook'>('war-room');
 
   return (
     <main className="cozy-app-shell min-h-screen text-[#f9ecd1] flex flex-col">
@@ -106,6 +108,18 @@ export default function OpsWardDashboard() {
               <Activity className="w-3 h-3" />
               <span>TELEMETRY & DLQ</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('guidebook')}
+              className={`flex items-center space-x-1.5 transition-all ${
+                activeTab === 'guidebook'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <BookOpenText className="w-3 h-3" />
+              <span>GUIDEBOOK</span>
+            </button>
           </div>
 
           {/* Commander Avatar Badge */}
@@ -171,6 +185,8 @@ export default function OpsWardDashboard() {
             <TelemetryDlqPipeline />
           </div>
         )}
+
+        {activeTab === 'guidebook' && <OpsWardGuidebook />}
       </div>
 
       {/* Tactical Status Footer */}
