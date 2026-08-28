@@ -103,62 +103,64 @@ export const SoundControlWidget: React.FC<SoundControlWidgetProps> = ({ variant 
         </button>
       )}
 
-      {/* Floating Sound Settings Popover */}
+      {/* Floating 16-Bit Pixel Audio Dialogue Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-[#140e0c]/98 border border-amber-900/60 shadow-2xl backdrop-blur-xl p-4 z-50 flex flex-col gap-3 text-neutral-200">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-amber-900/30 pb-2.5">
+        <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-[#271712] border-[3px] border-[#7c482c] shadow-[4px_4px_0_#120907] p-3 z-50 flex flex-col gap-2.5 text-[#f9ecd1] font-mono text-[9px] rounded-none">
+          {/* Panel Header */}
+          <div className="flex items-center justify-between border-b-2 border-[#5a301a] pb-2">
             <div className="flex items-center space-x-2">
-              <div className="p-1 rounded-md bg-amber-500/10 text-amber-400">
-                <Sliders className="w-3.5 h-3.5" />
+              <div className="w-5 h-5 grid place-items-center bg-[#422216] border border-[#8b5329] text-[#f6d177]">
+                <Sliders className="w-3 h-3" />
               </div>
-              <span className="text-xs font-bold text-amber-200 uppercase tracking-wider">
+              <span className="font-bold text-[#f5d58b] uppercase tracking-wider text-[8px]">
                 Audio & Acoustics
               </span>
             </div>
             <div className="flex items-center space-x-1.5">
               <button
                 onClick={() => soundManager.toggleMasterMute()}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
+                className={`px-2 py-1 text-[7px] font-bold border-2 transition-all shadow-[2px_2px_0_#100806] active:translate-x-0.5 active:translate-y-0.5 ${
                   settings.masterMuted
-                    ? 'bg-rose-950/80 border-rose-800 text-rose-300'
-                    : 'bg-neutral-800 border-neutral-700 text-neutral-300 hover:text-white'
+                    ? 'bg-[#7d2624] border-[#b84e44] text-[#ffd6d2]'
+                    : 'bg-[#38543a] border-[#5d8c60] text-[#e2f9e5]'
                 }`}
               >
                 {settings.masterMuted ? 'Unmute All' : 'Mute All'}
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-neutral-400 hover:text-white rounded"
+                className="w-5 h-5 grid place-items-center bg-[#381e15] border border-[#683920] text-[#d5b88e] hover:text-white hover:bg-[#4a271c] shadow-[1px_1px_0_#100806]"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             </div>
           </div>
 
           {/* 1. BGM Channel: Pixel Waltz */}
-          <div className="p-2.5 rounded-xl bg-neutral-900/70 border border-neutral-800/80 flex flex-col gap-2">
+          <div className="p-2 bg-[#170c08] border-2 border-[#542f1b] shadow-[inset_0_0_0_1px_#0e0604] flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Music className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-xs font-bold text-amber-100">BGM · Pixel Waltz</span>
+              <div className="flex items-center space-x-1.5">
+                <Music className="w-3.5 h-3.5 text-[#f6d177]" />
+                <span className="font-bold text-[#f6e5aa] text-[8px]">BGM · Pixel Waltz</span>
               </div>
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => soundManager.toggleBgm()}
-                  className="p-1 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors"
+                  className="px-1.5 py-0.5 bg-[#422416] border border-[#8b5329] text-[#f6d177] hover:bg-[#57301e] transition-colors text-[7px]"
                   title={settings.isBgmPlaying ? 'Pause Music' : 'Play Music'}
                 >
-                  {settings.isBgmPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  {settings.isBgmPlaying ? <Pause className="w-2.5 h-2.5" /> : <Play className="w-2.5 h-2.5" />}
                 </button>
                 <button
                   onClick={() => soundManager.toggleBgmMute()}
-                  className={`p-1 rounded transition-colors ${
-                    settings.bgmMuted ? 'text-rose-400 bg-rose-950/40' : 'text-neutral-400 hover:text-white'
+                  className={`px-1.5 py-0.5 border text-[7px] transition-colors ${
+                    settings.bgmMuted
+                      ? 'text-[#ff9d94] bg-[#5c1c1a] border-[#8b2d2a]'
+                      : 'text-[#d5b88e] bg-[#2d1810] border-[#57301e] hover:text-white'
                   }`}
                   title={settings.bgmMuted ? 'Unmute BGM' : 'Mute BGM'}
                 >
-                  {settings.bgmMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                  {settings.bgmMuted ? <VolumeX className="w-2.5 h-2.5" /> : <Volume2 className="w-2.5 h-2.5" />}
                 </button>
               </div>
             </div>
@@ -170,32 +172,34 @@ export const SoundControlWidget: React.FC<SoundControlWidgetProps> = ({ variant 
                 step="0.02"
                 value={settings.bgmMuted ? 0 : settings.bgmVolume}
                 onChange={(e) => soundManager.setBgmVolume(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                className="w-full h-2 bg-[#0c0503] border border-[#482514] appearance-none cursor-pointer accent-[#e59b3c]"
               />
-              <span className="text-[10px] font-mono text-neutral-400 min-w-[28px] text-right">
+              <span className="font-mono text-[#f6d177] min-w-[28px] text-right text-[8px]">
                 {Math.round((settings.bgmMuted ? 0 : settings.bgmVolume) * 100)}%
               </span>
             </div>
           </div>
 
           {/* 2. SFX Channel: Nature Ambient */}
-          <div className="p-2.5 rounded-xl bg-neutral-900/70 border border-neutral-800/80 flex flex-col gap-2">
+          <div className="p-2 bg-[#170c08] border-2 border-[#542f1b] shadow-[inset_0_0_0_1px_#0e0604] flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Trees className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-xs font-bold text-neutral-200">SFX · Nature Wind</span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
+              <div className="flex items-center space-x-1.5">
+                <Trees className="w-3.5 h-3.5 text-[#6dbb84]" />
+                <span className="font-bold text-[#e2f5e8] text-[8px]">SFX · Nature Wind</span>
+                <span className="px-1 py-0.2 text-[6px] font-bold uppercase bg-[#142d22] text-[#86d9a0] border border-[#2b5944]">
                   Outdoor Only
                 </span>
               </div>
               <button
                 onClick={() => soundManager.toggleNatureMute()}
-                className={`p-1 rounded transition-colors ${
-                  settings.natureMuted ? 'text-rose-400 bg-rose-950/40' : 'text-neutral-400 hover:text-white'
+                className={`px-1.5 py-0.5 border text-[7px] transition-colors ${
+                  settings.natureMuted
+                    ? 'text-[#ff9d94] bg-[#5c1c1a] border-[#8b2d2a]'
+                    : 'text-[#d5b88e] bg-[#2d1810] border-[#57301e] hover:text-white'
                 }`}
                 title={settings.natureMuted ? 'Unmute Nature SFX' : 'Mute Nature SFX'}
               >
-                {settings.natureMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                {settings.natureMuted ? <VolumeX className="w-2.5 h-2.5" /> : <Volume2 className="w-2.5 h-2.5" />}
               </button>
             </div>
             <div className="flex items-center space-x-2">
@@ -206,29 +210,31 @@ export const SoundControlWidget: React.FC<SoundControlWidgetProps> = ({ variant 
                 step="0.02"
                 value={settings.natureMuted ? 0 : settings.natureVolume}
                 onChange={(e) => soundManager.setNatureVolume(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-2 bg-[#0c0503] border border-[#482514] appearance-none cursor-pointer accent-[#58a870]"
               />
-              <span className="text-[10px] font-mono text-neutral-400 min-w-[28px] text-right">
+              <span className="font-mono text-[#86d9a0] min-w-[28px] text-right text-[8px]">
                 {Math.round((settings.natureMuted ? 0 : settings.natureVolume) * 100)}%
               </span>
             </div>
           </div>
 
           {/* 3. SFX Channel: Footsteps / Running */}
-          <div className="p-2.5 rounded-xl bg-neutral-900/70 border border-neutral-800/80 flex flex-col gap-2">
+          <div className="p-2 bg-[#170c08] border-2 border-[#542f1b] shadow-[inset_0_0_0_1px_#0e0604] flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Footprints className="w-3.5 h-3.5 text-sky-400" />
-                <span className="text-xs font-bold text-neutral-200">SFX · Footsteps / Movement</span>
+              <div className="flex items-center space-x-1.5">
+                <Footprints className="w-3.5 h-3.5 text-[#59a8d8]" />
+                <span className="font-bold text-[#e1f0fa] text-[8px]">SFX · Footsteps</span>
               </div>
               <button
                 onClick={() => soundManager.toggleSfxMute()}
-                className={`p-1 rounded transition-colors ${
-                  settings.sfxMuted ? 'text-rose-400 bg-rose-950/40' : 'text-neutral-400 hover:text-white'
+                className={`px-1.5 py-0.5 border text-[7px] transition-colors ${
+                  settings.sfxMuted
+                    ? 'text-[#ff9d94] bg-[#5c1c1a] border-[#8b2d2a]'
+                    : 'text-[#d5b88e] bg-[#2d1810] border-[#57301e] hover:text-white'
                 }`}
                 title={settings.sfxMuted ? 'Unmute Footsteps SFX' : 'Mute Footsteps SFX'}
               >
-                {settings.sfxMuted ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                {settings.sfxMuted ? <VolumeX className="w-2.5 h-2.5" /> : <Volume2 className="w-2.5 h-2.5" />}
               </button>
             </div>
             <div className="flex items-center space-x-2">
@@ -239,9 +245,9 @@ export const SoundControlWidget: React.FC<SoundControlWidgetProps> = ({ variant 
                 step="0.02"
                 value={settings.sfxMuted ? 0 : settings.sfxVolume}
                 onChange={(e) => soundManager.setSfxVolume(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                className="w-full h-2 bg-[#0c0503] border border-[#482514] appearance-none cursor-pointer accent-[#489dd3]"
               />
-              <span className="text-[10px] font-mono text-neutral-400 min-w-[28px] text-right">
+              <span className="font-mono text-[#8ec8ee] min-w-[28px] text-right text-[8px]">
                 {Math.round((settings.sfxMuted ? 0 : settings.sfxVolume) * 100)}%
               </span>
             </div>

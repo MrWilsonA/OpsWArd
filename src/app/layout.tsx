@@ -4,6 +4,11 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'OpsWArd - Distributed Incident Command & Spatial Tactical War-Room',
   description: 'Enterprise-grade 2D Pixel Tactical Control Room, Spatial Proximity Mesh, Distributed Raft Consensus, and Temporal Playbook Orchestration.',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
 };
 
 export default function RootLayout({
@@ -20,6 +25,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700;800&family=Press+Start+2P&display=swap"
           rel="stylesheet"
         />
+        <link rel="icon" type="image/png" href="/icon.png" />
       </head>
       <body className="bg-[#07090e] text-slate-100 min-h-screen antialiased selection:bg-cyan-500 selection:text-black">
         {children}
