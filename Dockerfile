@@ -17,6 +17,8 @@ COPY --from=build --chown=opsward:opsward /app/package.json /app/package-lock.js
 COPY --from=build --chown=opsward:opsward /app/node_modules ./node_modules
 COPY --from=build --chown=opsward:opsward /app/.next ./.next
 COPY --from=build --chown=opsward:opsward /app/public ./public
+COPY --from=build --chown=opsward:opsward /app/src/lib/campus-colliders.json ./src/lib/campus-colliders.json
+COPY --from=build --chown=opsward:opsward /app/src/lib/map-colliders ./src/lib/map-colliders
 USER opsward
 EXPOSE 3000
 CMD ["npm", "start"]

@@ -167,6 +167,9 @@ services:
       backend-1:
         condition: service_started
     ports: ["${FRONTEND_PORT:-3100}:3000"]
+    volumes:
+      - ./src/lib/campus-colliders.json:/app/src/lib/campus-colliders.json
+      - ./src/lib/map-colliders:/app/src/lib/map-colliders
     networks: [opsward]
 
   prometheus:

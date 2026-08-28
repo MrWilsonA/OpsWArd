@@ -21,7 +21,17 @@ interface TacticalCanvasRoomProps {
 type Direction = 'down' | 'left' | 'right' | 'up';
 type Rect = { x1: number; y1: number; x2: number; y2: number };
 type Room = Rect & { name: string };
-type Interactable = { id: string; x: number; y: number; radius: number; label: string; message: string; targetMap?: WorldMapId };
+type Interactable = {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  label: string;
+  message: string;
+  targetMap?: WorldMapId;
+  autoEnter?: boolean;
+  enterRadius?: number;
+};
 type Occluder = { id: string; x: number; y: number; width: number; height: number; baseline: number; through: boolean };
 type NpcSpot = { id: string; x: number; y: number };
 
@@ -128,7 +138,7 @@ const OUTDOOR_ROOMS: Room[] = [
 ];
 
 const INDOOR_EXIT = { x: 752, y: 930, radius: 82 };
-const OUTDOOR_HALL_DOOR = { x: 740, y: 395, radius: 84 };
+const OUTDOOR_HALL_DOOR = { x: 335, y: 280, radius: 72 };
 const INTERIOR_EXIT = { x: 768, y: 880, radius: 88 };
 
 const INTERACTABLES: Interactable[] = [
@@ -141,12 +151,12 @@ const INTERACTABLES: Interactable[] = [
 ];
 
 const OUTDOOR_INTERACTABLES: Interactable[] = [
-  { id: 'enter-hall', x: OUTDOOR_HALL_DOOR.x, y: OUTDOOR_HALL_DOOR.y, radius: OUTDOOR_HALL_DOOR.radius, label: 'Enter Incident Command Hall', message: 'Entering the indoor operations floor.', targetMap: 'indoor' },
-  { id: 'greenhouse', x: 810, y: 920, radius: 82, label: 'Enter Oakheart Greenhouse', message: 'Opening environmental telemetry greenhouse.', targetMap: 'greenhouse' },
-  { id: 'relay', x: 1225, y: 325, radius: 82, label: 'Enter SFU Network Relay', message: 'Opening spatial-media relay lab.', targetMap: 'relay' },
-  { id: 'workshop', x: 340, y: 915, radius: 82, label: 'Enter Saga Workshop', message: 'Opening playbook orchestration workshop.', targetMap: 'workshop' },
-  { id: 'lodge', x: 1250, y: 640, radius: 82, label: 'Enter Raft Audit Lodge', message: 'Opening consensus and audit lodge.', targetMap: 'lodge' },
-  { id: 'cottage', x: 1240, y: 945, radius: 82, label: 'Enter DLQ Replay Cottage', message: 'Opening telemetry and replay cottage.', targetMap: 'cottage' },
+  { id: 'enter-hall', x: OUTDOOR_HALL_DOOR.x, y: OUTDOOR_HALL_DOOR.y, radius: OUTDOOR_HALL_DOOR.radius, enterRadius: 44, autoEnter: true, label: 'Enter Incident Command Hall', message: 'Entering the indoor operations floor.', targetMap: 'indoor' },
+  { id: 'greenhouse', x: 810, y: 875, radius: 72, enterRadius: 46, autoEnter: true, label: 'Enter Oakheart Greenhouse', message: 'Opening environmental telemetry greenhouse.', targetMap: 'greenhouse' },
+  { id: 'relay', x: 1215, y: 280, radius: 72, enterRadius: 46, autoEnter: true, label: 'Enter SFU Network Relay', message: 'Opening spatial-media relay lab.', targetMap: 'relay' },
+  { id: 'workshop', x: 395, y: 860, radius: 72, enterRadius: 46, autoEnter: true, label: 'Enter Saga Workshop', message: 'Opening playbook orchestration workshop.', targetMap: 'workshop' },
+  { id: 'lodge', x: 1250, y: 580, radius: 72, enterRadius: 46, autoEnter: true, label: 'Enter Raft Audit Lodge', message: 'Opening consensus and audit lodge.', targetMap: 'lodge' },
+  { id: 'cottage', x: 1240, y: 865, radius: 72, enterRadius: 46, autoEnter: true, label: 'Enter DLQ Replay Cottage', message: 'Opening telemetry and replay cottage.', targetMap: 'cottage' },
 ];
 
 const INTERIOR_INTERACTABLES: Record<Exclude<WorldMapId, 'indoor' | 'outdoor'>, Interactable[]> = {
@@ -322,11 +332,12 @@ const MAP_SPAWNS: Record<WorldMapId, TacticalPosition> = {
 };
 
 const OUTDOOR_RETURN_SPAWNS: Partial<Record<WorldMapId, TacticalPosition>> = {
-  indoor: { x: 335, y: 330 },
-  lodge: { x: 1250, y: 640 },
-  relay: { x: 1225, y: 325 },
-  workshop: { x: 340, y: 915 },
-  greenhouse: { x: 810, y: 920 },
+  indoor: { x: 335, y: 350 },
+  lodge: { x: 1250, y: 650 },
+  relay: { x: 1235, y: 350 },
+  workshop: { x: 395, y: 925 },
+  greenhouse: { x: 810, y: 945 },
+  cottage: { x: 1240, y: 935 },
 };
 
 const loadImage = (source: string) => new Promise<HTMLImageElement>((resolve) => {
@@ -366,6 +377,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   const stepPhaseRef = useRef(0);
   const keysRef = useRef<Set<string>>(new Set());
   const nearbyInteractableRef = useRef<Interactable | null>(null);
+  const autoPortalRef = useRef<string | null>(null);
   const interactionBurstRef = useRef<{ x: number; y: number; until: number } | null>(null);
   const noteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeMapRef = useRef<WorldMapId>('indoor');
@@ -390,6 +402,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
     positionRef.current = nextMap === 'outdoor' && previousMap !== 'outdoor'
       ? { ...(OUTDOOR_RETURN_SPAWNS[previousMap] ?? OUTDOOR_SPAWN) }
       : { ...MAP_SPAWNS[nextMap] };
+    setPlayerPos({ ...positionRef.current });
     cameraRef.current = {
       x: clamp(positionRef.current.x - visibleWidth / 2, 0, WORLD_WIDTH - visibleWidth),
       y: clamp(positionRef.current.y - visibleHeight / 2, 0, WORLD_HEIGHT - visibleHeight),
@@ -458,10 +471,14 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
           const res = await fetch(`/api/colliders?map=${m}`);
           if (res.ok) {
             const data = await res.json();
-            liveCollidersCache[m] = {
-              floors: data.floors || [],
-              obstacles: data.obstacles || [],
-            };
+            if (Array.isArray(data.floors) && data.floors.length > 0 && Array.isArray(data.obstacles)) {
+              liveCollidersCache[m] = {
+                floors: data.floors,
+                obstacles: data.obstacles,
+              };
+            } else {
+              console.warn(`Ignored unusable collider response for ${m}; keeping bundled colliders.`);
+            }
           }
         } catch {}
       })
@@ -471,6 +488,26 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
   useEffect(() => {
     fetchLiveColliders();
   }, [fetchLiveColliders]);
+
+  useEffect(() => {
+    if (activeMap !== 'outdoor') {
+      autoPortalRef.current = null;
+      return;
+    }
+
+    const portal = OUTDOOR_INTERACTABLES.find((item) => item.autoEnter
+      && item.targetMap
+      && Math.hypot(playerPos.x - item.x, playerPos.y - item.y) <= (item.enterRadius ?? item.radius));
+    if (!portal) {
+      autoPortalRef.current = null;
+      return;
+    }
+    if (autoPortalRef.current === portal.id || !portal.targetMap) return;
+
+    autoPortalRef.current = portal.id;
+    setInteractionNote(portal.message);
+    changeMap(portal.targetMap);
+  }, [activeMap, changeMap, playerPos]);
 
   useEffect(() => {
     const movementKeys = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright', 'shift']);
@@ -942,7 +979,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
       <div className="game-canvas-wrap">
         {!assetsReady && <div className="absolute inset-0 z-10 grid place-items-center bg-[#2b1814] text-sm font-bold text-[#f5d78f]"><span><Sparkles className="mr-2 inline h-4 w-4 animate-pulse" />Preparing the campus…</span></div>}
         <canvas ref={canvasRef} width={VIEW_WIDTH * RENDER_SCALE} height={VIEW_HEIGHT * RENDER_SCALE} onClick={handleCanvasClick} className="block h-full w-full cursor-crosshair" aria-label="Interactive multi-room pixel-art OpsWArd campus" />
-        <div className="game-quest-card"><span className="game-eyebrow">TODAY&apos;S PRIORITY</span><strong>Stabilize payment gateway</strong><span>{activeMap === 'outdoor' ? 'Follow the paths and enter each OpsWArd facility' : activeMap === 'indoor' ? 'Coordinate the incident from Central Operations' : 'Inspect this facility · use E at the south exit'}</span></div>
+        <div className="game-quest-card"><span className="game-eyebrow">TODAY&apos;S PRIORITY</span><strong>Stabilize payment gateway</strong><span>{activeMap === 'outdoor' ? 'Follow the paths · walk up to a doorway to enter' : activeMap === 'indoor' ? 'Coordinate the incident from Central Operations' : 'Inspect this facility · use E at the south exit'}</span></div>
         {nearbyInteractable && <div className="game-interaction-prompt"><kbd>E</kbd><span>{nearbyInteractable.label}</span></div>}
         {interactionNote && <div className="game-interaction-note">{interactionNote}</div>}
         {isPodiumBroadcasting && <div className="game-broadcast-toast"><Radio className="h-3.5 w-3.5" /> Central table broadcast active</div>}
