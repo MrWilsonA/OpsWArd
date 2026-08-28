@@ -8,6 +8,7 @@ import { RaftConsensusEngine } from '@/components/raft/RaftConsensusEngine';
 import { PlaybookSagaOrchestrator } from '@/components/playbook/PlaybookSagaOrchestrator';
 import { TelemetryDlqPipeline } from '@/components/telemetry/TelemetryDlqPipeline';
 import { OpsWardGuidebook } from '@/components/guide/OpsWardGuidebook';
+import { PixelSplash } from '@/components/splash/PixelSplash';
 import { 
   ShieldAlert, 
   Radio, 
@@ -31,6 +32,19 @@ export default function OpsWardDashboard() {
   const [nearbyResponders, setNearbyResponders] = useState<{ char: CharacterProfile; distance: number; volume: number }[]>([]);
   const [isPodiumBroadcasting, setIsPodiumBroadcasting] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'war-room' | 'consensus' | 'playbooks' | 'telemetry' | 'guidebook'>('war-room');
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return (
+      <PixelSplash
+        onEnter={() => setShowSplash(false)}
+        onOpenGuide={() => {
+          setActiveTab('guidebook');
+          setShowSplash(false);
+        }}
+      />
+    );
+  }
 
   return (
     <main className="cozy-app-shell min-h-screen text-[#f9ecd1] flex flex-col">
@@ -70,7 +84,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <Compass className="w-3 h-3" />
-              <span>WAR-ROOM & COMMS</span>
+              <span>WAR ROOM</span>
             </button>
 
             <button
@@ -82,7 +96,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <Layers className="w-3 h-3" />
-              <span>RAFT CONSENSUS</span>
+              <span>RAFT</span>
             </button>
 
             <button
@@ -94,7 +108,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <FileCode className="w-3 h-3" />
-              <span>SAGA PLAYBOOKS</span>
+              <span>PLAYBOOKS</span>
             </button>
 
             <button
@@ -106,7 +120,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <Activity className="w-3 h-3" />
-              <span>TELEMETRY & DLQ</span>
+              <span>TELEMETRY</span>
             </button>
 
             <button
