@@ -192,7 +192,7 @@ services:
       - grafana-data:/var/lib/grafana
       - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on: [prometheus]
-    ports: ["3001:3000"]
+    ports: ["${GRAFANA_PORT:-3002}:3000"]
     networks: [opsward]
 
 networks:
