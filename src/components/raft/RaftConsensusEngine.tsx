@@ -24,7 +24,12 @@ import {
   ArrowRight,
   Sparkles,
   Info,
-  X
+  X,
+  Sliders,
+  Cpu,
+  Globe,
+  RadioTower,
+  KeyRound
 } from 'lucide-react';
 
 interface CommandHelper {
@@ -36,51 +41,60 @@ interface CommandHelper {
   impact: string;
 }
 
+interface ClusterStateMachine {
+  severity: 'SEV-0' | 'SEV-1' | 'NORMAL';
+  dbStatus: 'READ_WRITE' | 'LOCKED_READ_ONLY' | 'REPLICA_PROMOTED';
+  trafficRouting: 'BALANCED' | 'US_EAST_DRAINED' | 'REROUTED_DR';
+  cacheStatus: 'HEALTHY' | 'FLUSHED_CLEAN';
+  securityMode: 'STANDARD' | 'CIRT_QUARANTINE';
+  lastDispatchedPlaybook: string | null;
+}
+
 const COMMAND_HELPERS: CommandHelper[] = [
   {
     category: 'Incident',
     command: 'DECLARE SEVERITY=SEV-0',
-    label: 'SEV-0 Outage',
+    label: '🚨 SEV-0 Outage',
     badge: '🚨 CRITICAL',
-    description: 'Menyatakan insiden downtime total (P0/SEV-0) dan mengunci audit trail cluster.',
-    impact: 'Semua node mencatat state SEV-0; notifikasi pager darurat dikirim ke seluruh tim.',
+    description: 'Memicu status darurat tertinggi (P0/SEV-0) dan mengunci audit trail cluster.',
+    impact: 'State Machine cluster beralih ke SEV-0; notifikasi darurat dipancarkan ke seluruh responder.',
   },
   {
     category: 'Incident',
     command: 'DECLARE SEVERITY=SEV-1',
-    label: 'SEV-1 Degraded',
+    label: '⚠️ SEV-1 Degraded',
     badge: '⚠️ HIGH',
-    description: 'Menyatakan penurunan performa parsial (P1/SEV-1) dengan kuorum replikasi.',
-    impact: 'Node memperbarui status keparahan insiden tanpa mematikan write traffic.',
+    description: 'Menyatakan penurunan performa sistem (P1/SEV-1) dengan kuorum replikasi.',
+    impact: 'State Machine memperbarui level insiden tanpa mematikan jalur transaksi.',
   },
   {
     category: 'Database',
     command: 'LOCK DATABASE_WRITES',
-    label: 'Lock DB Writes',
+    label: '🔒 Lock DB Writes',
     badge: '🔒 STORAGE',
-    description: 'Mengaktifkan mode Read-Only darurat pada database untuk mencegah korupsi data.',
-    impact: 'Primary DB menolak query mutasi; replikasi sinkron dihentikan sementara.',
+    description: 'Mengaktifkan proteksi Read-Only darurat pada database untuk mencegah korupsi data.',
+    impact: 'State Machine mengunci database; transaksi mutasi INSERT/UPDATE ditolak.',
   },
   {
     category: 'Database',
     command: 'PROMOTE DB_REPLICA_02',
-    label: 'Promote DB Replica',
+    label: '🔄 Promote DB Replica',
     badge: '🔄 FAILOVER',
-    description: 'Mengangkat Replica 02 menjadi Primary Database baru setelah database utama down.',
-    impact: 'Quorum node mengonfirmasi failover database dan mengarahkan connection pool.',
+    description: 'Mengangkat Replica 02 menjadi Primary Database baru setelah leader DB lama down.',
+    impact: 'State Machine mengarahkan connection pool master ke Replica-02.',
   },
   {
     category: 'Network',
     command: 'DRAIN TRAFFIC_ZONE_US_EAST',
-    label: 'Drain US-East',
+    label: '⚡ Drain US-East',
     badge: '⚡ NETWORK',
     description: 'Mengalihkan 100% traffic masuk dari data center US-East ke US-West & EU.',
-    impact: 'BGP Anycast & Ingress router memperbarui bobot routing secara konsisten.',
+    impact: 'Routing US-East diset ke 0%; beban dialihkan 50% ke US-West dan 50% ke EU-Central.',
   },
   {
     category: 'Network',
     command: 'FLUSH REDIS_SESSION_CLUSTER',
-    label: 'Flush Redis Cache',
+    label: '🧹 Flush Redis Cache',
     badge: '🧹 CACHE',
     description: 'Mengosongkan cache Redis terdistribusi untuk membuang poisoned session token.',
     impact: 'Cache cluster dieksekusi serempak pada log index yang sama di seluruh node.',
@@ -88,15 +102,15 @@ const COMMAND_HELPERS: CommandHelper[] = [
   {
     category: 'Playbook',
     command: 'DISPATCH PLAYBOOK_AUTO_FAILOVER',
-    label: 'Dispatch Failover',
+    label: '🚀 Dispatch Failover',
     badge: '🚀 SAGA',
     description: 'Memicu Saga Playbook Orchestrator untuk menjalankan runbook failover otomatis.',
-    impact: 'Saga engine menerima token otorisasi dari Raft ledger dan mengeksekusi step.',
+    impact: 'Saga engine menerima token otorisasi dari Raft ledger dan memulai workflow langkah.',
   },
   {
     category: 'Security',
     command: 'ENABLE CIRT_ISOLATION_MODE',
-    label: 'CIRT Quarantine',
+    label: '🛡️ CIRT Quarantine',
     badge: '🛡️ SECURITY',
     description: 'Mengisolasi subnet yang terinfeksi dan memblokir port manajemen eksternal.',
     impact: 'Firewall cluster mengunci akses manajemen ke subnet publik.',
@@ -163,7 +177,19 @@ export const RaftConsensusEngine: React.FC = () => {
   const [heartbeatTick, setHeartbeatTick] = useState<number>(0);
   const [mutationInput, setMutationInput] = useState<string>('');
   const [isHelperOpen, setIsHelperOpen] = useState<boolean>(false);
+  
+  // Replicated Cluster State Machine
+  const [stateMachine, setStateMachine] = useState<ClusterStateMachine>({
+    severity: 'SEV-0',
+    dbStatus: 'READ_WRITE',
+    trafficRouting: 'BALANCED',
+    cacheStatus: 'HEALTHY',
+    securityMode: 'STANDARD',
+    lastDispatchedPlaybook: null,
+  });
+
   const [auditLog, setAuditLog] = useState<string[]>([
+    '[STATE_MACHINE] Cluster initialized. Severity: SEV-0, DB: Read-Write, Traffic: Balanced.',
     '[RAFT] Node Alpha elected Leader for Term 14 (Quorum 3/3).',
     '[HEARTBEAT] Leader broadcasting AppendEntries RPCs every 50ms.',
     '[COMMIT] Index #108 committed across majority nodes.',
@@ -180,8 +206,6 @@ export const RaftConsensusEngine: React.FC = () => {
   // Split-Brain Network Partition Simulation
   const handleTogglePartition = () => {
     if (!isPartitioned) {
-      // Isolate Node-1 (Old Leader) into Minority partition
-      // Node-2 and Node-3 form Majority and elect Node-2 as new Leader for Term 15!
       setNodes((prev) =>
         prev.map((n) => {
           if (n.id === 'node-1') {
@@ -199,7 +223,6 @@ export const RaftConsensusEngine: React.FC = () => {
         ...prev,
       ]);
     } else {
-      // Heal Network Partition: Rejoin Node-1 and step down to follower
       setNodes((prev) =>
         prev.map((n) => ({
           ...n,
@@ -227,7 +250,6 @@ export const RaftConsensusEngine: React.FC = () => {
         if (n.id === leader.id) {
           return { ...n, status: 'crashed', role: 'Follower' };
         }
-        // Next healthy node becomes candidate -> leader
         return n.status === 'healthy' ? { ...n, role: 'Leader', term: n.term + 1, voteCount: 2 } : n;
       })
     );
@@ -237,12 +259,13 @@ export const RaftConsensusEngine: React.FC = () => {
     ]);
   };
 
-  // Propose Consensus Mutation
+  // Propose and Commit Mutation to State Machine
   const executeMutation = (rawCommand: string) => {
     if (!rawCommand.trim()) return;
     const command = rawCommand.trim().toUpperCase();
     const targetIndex = nodes[0].commitIndex + 1;
 
+    // Apply log mutation to Raft cluster nodes
     setNodes((prev) =>
       prev.map((n) => {
         if (n.status === 'crashed' || (isPartitioned && n.id === 'node-1')) {
@@ -258,11 +281,46 @@ export const RaftConsensusEngine: React.FC = () => {
       })
     );
 
+    // Apply real side-effect mutation to Cluster State Machine
+    let stateMessage = '';
+    setStateMachine((prev) => {
+      const next = { ...prev };
+      if (command.includes('SEV-0')) {
+        next.severity = 'SEV-0';
+        stateMessage = 'Active Incident Severity changed to SEV-0 (CRITICAL OUTAGE).';
+      } else if (command.includes('SEV-1')) {
+        next.severity = 'SEV-1';
+        stateMessage = 'Active Incident Severity changed to SEV-1 (DEGRADED).';
+      } else if (command.includes('LOCK DATABASE') || command.includes('LOCK_DATABASE')) {
+        next.dbStatus = 'LOCKED_READ_ONLY';
+        stateMessage = 'Database writes locked globally (Mode: Read-Only).';
+      } else if (command.includes('PROMOTE DB') || command.includes('PROMOTE_DB')) {
+        next.dbStatus = 'REPLICA_PROMOTED';
+        stateMessage = 'Replica-02 promoted to Master Database.';
+      } else if (command.includes('DRAIN TRAFFIC') || command.includes('DRAIN_TRAFFIC')) {
+        next.trafficRouting = 'US_EAST_DRAINED';
+        stateMessage = 'Traffic drained from US-East. Routing 50% to US-West and 50% to EU-Central.';
+      } else if (command.includes('FLUSH REDIS') || command.includes('FLUSH_REDIS')) {
+        next.cacheStatus = 'FLUSHED_CLEAN';
+        stateMessage = 'Redis distributed cache purged and re-warmed.';
+      } else if (command.includes('PLAYBOOK') || command.includes('FAILOVER')) {
+        next.lastDispatchedPlaybook = 'Database Failover & Recovery Playbook';
+        stateMessage = 'Saga Playbook trigger dispatched via consensus token.';
+      } else if (command.includes('CIRT') || command.includes('ISOLATION')) {
+        next.securityMode = 'CIRT_QUARANTINE';
+        stateMessage = 'CIRT Network Quarantine activated on vulnerable subnets.';
+      } else {
+        stateMessage = `Custom state machine action applied: "${command}".`;
+      }
+      return next;
+    });
+
     const leaderNode = nodes.find((n) => n.role === 'Leader') || nodes[0];
 
     setAuditLog((prev) => [
+      `[STATE_MACHINE] ${stateMessage}`,
       `[COMMIT] Index #${targetIndex} "${command}" committed across Quorum nodes (2/3 majority ACK).`,
-      `[APPEND_ENTRIES] ${leaderNode.name} replicated entry to active followers at Term ${leaderNode.term}.`,
+      `[APPEND_ENTRIES] ${leaderNode.name} replicated entry to followers at Term ${leaderNode.term}.`,
       `[PROPOSAL] Leader received mutation request: "${command}".`,
       ...prev,
     ]);
@@ -275,7 +333,7 @@ export const RaftConsensusEngine: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full tactical-glass rounded-xl border border-tactical-border/80 overflow-hidden shadow-2xl">
-      {/* Header */}
+      {/* Top Main Header */}
       <div className="px-4 py-3 bg-[#0d121f]/90 border-b border-tactical-border flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center space-x-2.5">
           <Layers className="w-4 h-4 text-cyan-400" />
@@ -301,12 +359,79 @@ export const RaftConsensusEngine: React.FC = () => {
         </div>
       </div>
 
+      {/* Live Replicated Cluster State Machine Banner */}
+      <div className="px-4 py-2 bg-[#121a2d]/90 border-b border-tactical-border/80 flex items-center justify-between flex-wrap gap-2 text-[11px] font-mono">
+        <div className="flex items-center gap-1.5 text-slate-400">
+          <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="font-bold text-slate-200">LIVE STATE MACHINE:</span>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* 1. Incident Severity Badge */}
+          <div className={`px-2 py-0.5 rounded flex items-center gap-1 border font-bold ${
+            stateMachine.severity === 'SEV-0'
+              ? 'bg-rose-950/80 border-rose-600 text-rose-300 animate-pulse'
+              : stateMachine.severity === 'SEV-1'
+              ? 'bg-amber-950/80 border-amber-600 text-amber-300'
+              : 'bg-emerald-950/80 border-emerald-600 text-emerald-300'
+          }`}>
+            <AlertTriangle className="w-3 h-3" />
+            <span>{stateMachine.severity === 'SEV-0' ? 'SEV-0 OUTAGE' : stateMachine.severity === 'SEV-1' ? 'SEV-1 DEGRADED' : 'NORMAL'}</span>
+          </div>
+
+          {/* 2. Database Write Lock Badge */}
+          <div className={`px-2 py-0.5 rounded flex items-center gap-1 border font-bold ${
+            stateMachine.dbStatus === 'LOCKED_READ_ONLY'
+              ? 'bg-rose-950/80 border-rose-500 text-rose-200'
+              : stateMachine.dbStatus === 'REPLICA_PROMOTED'
+              ? 'bg-blue-950/80 border-cyan-500 text-cyan-200'
+              : 'bg-slate-900 border-slate-700 text-slate-300'
+          }`}>
+            <Database className="w-3 h-3 text-cyan-400" />
+            <span>
+              {stateMachine.dbStatus === 'LOCKED_READ_ONLY'
+                ? 'DB: READ-ONLY (LOCKED)'
+                : stateMachine.dbStatus === 'REPLICA_PROMOTED'
+                ? 'DB: REPLICA-02 PRIMARY'
+                : 'DB: READ-WRITE'}
+            </span>
+          </div>
+
+          {/* 3. Traffic Routing Badge */}
+          <div className={`px-2 py-0.5 rounded flex items-center gap-1 border font-bold ${
+            stateMachine.trafficRouting === 'US_EAST_DRAINED'
+              ? 'bg-amber-950/80 border-amber-500 text-amber-300'
+              : 'bg-slate-900 border-slate-700 text-slate-300'
+          }`}>
+            <Globe className="w-3 h-3 text-cyan-400" />
+            <span>{stateMachine.trafficRouting === 'US_EAST_DRAINED' ? 'TRAFFIC: US-EAST DRAINED (0%)' : 'TRAFFIC: BALANCED (33%)'}</span>
+          </div>
+
+          {/* 4. Security Mode Badge */}
+          {stateMachine.securityMode === 'CIRT_QUARANTINE' && (
+            <div className="px-2 py-0.5 rounded bg-purple-950/80 border border-purple-500 text-purple-300 font-bold flex items-center gap-1">
+              <ShieldAlert className="w-3 h-3" />
+              <span>CIRT QUARANTINE ACTIVE</span>
+            </div>
+          )}
+
+          {/* 5. Playbook Dispatched Trigger */}
+          {stateMachine.lastDispatchedPlaybook && (
+            <div className="px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-400 text-cyan-200 font-bold flex items-center gap-1">
+              <Play className="w-3 h-3 text-cyan-400" />
+              <span>PLAYBOOK DISPATCHED</span>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Cluster Node Visualizer */}
       <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 border-b border-tactical-border/60 bg-[#090d16]/70">
         {nodes.map((node) => {
           const isLeader = node.role === 'Leader';
           const isPart = node.status === 'partitioned';
           const isCrashed = node.status === 'crashed';
+          const isUsEastDrained = stateMachine.trafficRouting === 'US_EAST_DRAINED' && node.id === 'node-1';
 
           return (
             <div
@@ -352,7 +477,9 @@ export const RaftConsensusEngine: React.FC = () => {
 
                 <div className="text-[10px] font-mono text-slate-500 mb-2 flex items-center justify-between">
                   <span>IP: {node.ipAddress}</span>
-                  <span>{node.latencyMs}ms</span>
+                  <span className={isUsEastDrained ? 'text-amber-400 font-bold' : ''}>
+                    {isUsEastDrained ? 'TRAFFIC: 0% (DRAINED)' : stateMachine.trafficRouting === 'US_EAST_DRAINED' ? 'TRAFFIC: 50%' : `${node.latencyMs}ms`}
+                  </span>
                 </div>
               </div>
 
@@ -378,7 +505,7 @@ export const RaftConsensusEngine: React.FC = () => {
           <div className="md:col-span-6 flex items-center space-x-2">
             <input
               type="text"
-              placeholder="Propose mutation (or click helper chips below)..."
+              placeholder="Ketik perintah (atau klik preset di bawah)..."
               value={mutationInput}
               onChange={(e) => setMutationInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleProposeMutation()}
@@ -419,14 +546,14 @@ export const RaftConsensusEngine: React.FC = () => {
         <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-800/60">
           <span className="text-[10px] font-mono text-slate-500 uppercase flex items-center gap-1 mr-1">
             <Sparkles className="w-3 h-3 text-cyan-400" />
-            Quick Presets:
+            Quick Action Presets:
           </span>
           {COMMAND_HELPERS.slice(0, 5).map((helper, idx) => (
             <button
               key={idx}
               onClick={() => executeMutation(helper.command)}
               className="px-2 py-1 rounded bg-slate-900/80 border border-slate-700/80 hover:border-cyan-500/70 hover:bg-cyan-950/40 text-slate-300 hover:text-cyan-200 text-[10px] font-mono transition-all flex items-center gap-1"
-              title={`Click to propose "${helper.command}": ${helper.description}`}
+              title={`Klik untuk mengeksekusi "${helper.command}": ${helper.description}`}
             >
               <span>{helper.label}</span>
             </button>
@@ -447,7 +574,7 @@ export const RaftConsensusEngine: React.FC = () => {
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-cyan-400" />
               <strong className="text-cyan-200 text-xs uppercase tracking-wider">
-                Raft Consensus Command Reference & Helper Guide
+                Raft Consensus Command Reference & State Machine Impact Guide
               </strong>
             </div>
             <button
@@ -477,19 +604,30 @@ export const RaftConsensusEngine: React.FC = () => {
                     {item.description}
                   </p>
                   <p className="text-[9px] text-slate-500 leading-snug mt-1">
-                    <span className="text-amber-400 font-semibold">Efek:</span> {item.impact}
+                    <span className="text-amber-400 font-semibold">Efek State Machine:</span> {item.impact}
                   </p>
                 </div>
-                <button
-                  onClick={() => {
-                    executeMutation(item.command);
-                    setIsHelperOpen(false);
-                  }}
-                  className="mt-1 w-full py-1 rounded bg-blue-600/20 border border-blue-500/40 text-blue-300 hover:bg-blue-600 hover:text-white text-[10px] font-bold transition-all flex items-center justify-center gap-1"
-                >
-                  <Play className="w-2.5 h-2.5" />
-                  <span>Propose This Command</span>
-                </button>
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    onClick={() => {
+                      setMutationInput(item.command);
+                      setIsHelperOpen(false);
+                    }}
+                    className="flex-1 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-[10px] font-bold transition-all"
+                  >
+                    Salin ke Input
+                  </button>
+                  <button
+                    onClick={() => {
+                      executeMutation(item.command);
+                      setIsHelperOpen(false);
+                    }}
+                    className="flex-1 py-1 rounded bg-blue-600/30 border border-blue-500/50 text-blue-300 hover:bg-blue-600 hover:text-white text-[10px] font-bold transition-all flex items-center justify-center gap-1"
+                  >
+                    <Play className="w-2.5 h-2.5" />
+                    <span>Eksekusi Konsensus</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
