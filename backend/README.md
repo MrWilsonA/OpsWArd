@@ -22,7 +22,7 @@ The API listens on `http://localhost:4000`, WebSocket on `/socket`, and gRPC on 
 docker compose up --build
 ```
 
-This starts three named Erlang nodes. Only `backend-1` performs migrations; Ecto migration locking still protects deployments where multiple jobs are launched.
+The containerized frontend is exposed at `http://localhost:3100` unless `FRONTEND_PORT` overrides it. This starts three named Erlang nodes. Only `backend-1` performs migrations; Ecto migration locking still protects deployments where multiple jobs are launched.
 
 ## Contracts
 

@@ -16,7 +16,7 @@ config :opsward_web, OpsWardWeb.Endpoint,
   force_ssl: [
     rewrite_on: [:x_forwarded_proto],
     exclude: [
-      # paths: ["/health"],
+      paths: ["/api/v1/health", "/api/v1/metrics"],
       hosts: ["localhost", "127.0.0.1"]
     ]
   ]

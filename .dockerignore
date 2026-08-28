@@ -1,8 +1,10 @@
 .git
 .next
 node_modules
-backend/_build
-backend/deps
+backend/
+backend/**
+**/_build*
+**/deps*
 tools
 Reference
 *.log

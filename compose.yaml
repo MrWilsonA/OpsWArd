@@ -14,18 +14,21 @@ x-backend: &backend
     KAFKA_ENABLED: "true"
     KAFKA_BROKERS: kafka:9092
     RAFT_ENABLED: "true"
+    RAFT_DATA_DIR: /app/data/raft
     RAFT_NODES: opsward@backend-1,opsward@backend-2,opsward@backend-3
     RELEASE_COOKIE: opsward-local-cluster-cookie
     GRPC_ENABLED: "true"
     LIVEKIT_URL: ws://localhost:7880
     LIVEKIT_API_KEY: devkey
     LIVEKIT_API_SECRET: secret
-    CORS_ORIGINS: http://localhost:3000
+    CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-3100}
   depends_on:
     postgres:
       condition: service_healthy
     kafka:
       condition: service_healthy
+    kafka-init:
+      condition: service_completed_successfully
     livekit:
       condition: service_started
   networks: [opsward]
@@ -74,6 +77,21 @@ services:
       - kafka-data:/tmp/kraft-combined-logs
     networks: [opsward]
 
+  kafka-init:
+    image: apache/kafka:4.1.2
+    restart: "no"
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command:
+      - /bin/bash
+      - -ec
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic opsward.telemetry.v1 --partitions 12 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic opsward.telemetry.dlq.v1 --partitions 3 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic opsward.audit.v1 --partitions 6 --replication-factor 1
+    networks: [opsward]
+
   redis:
     image: redis:8.2-alpine
     restart: unless-stopped
@@ -99,7 +117,7 @@ services:
     ports:
       - "7880:7880"
       - "7881:7881"
-      - "50000-50100:50000-50100/udp"
+      - "51000-51100:51000-51100/udp"
     networks: [opsward]
 
   backend-1:
@@ -108,6 +126,7 @@ services:
     environment:
       <<: *backend-env
       RELEASE_NODE: opsward@backend-1
+      RELEASE_DISTRIBUTION: sname
       RUN_MIGRATIONS: "true"
     ports:
       - "4000:4000"
@@ -121,6 +140,7 @@ services:
     environment:
       <<: *backend-env
       RELEASE_NODE: opsward@backend-2
+      RELEASE_DISTRIBUTION: sname
     volumes:
       - raft-data-2:/app/data/raft
 
@@ -130,6 +150,7 @@ services:
     environment:
       <<: *backend-env
       RELEASE_NODE: opsward@backend-3
+      RELEASE_DISTRIBUTION: sname
     volumes:
       - raft-data-3:/app/data/raft
 
@@ -145,7 +166,7 @@ services:
     depends_on:
       backend-1:
         condition: service_started
-    ports: ["3000:3000"]
+    ports: ["${FRONTEND_PORT:-3100}:3000"]
     networks: [opsward]
 
   prometheus:

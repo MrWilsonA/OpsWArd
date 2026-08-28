@@ -14,9 +14,7 @@ defmodule OpsWard.Telemetry.IngestionPipeline do
            hosts: config[:hosts], group_id: config[:group_id], topics: [config[:telemetry_topic]]},
         concurrency: 1
       ],
-      processors: [
-        default: [concurrency: System.schedulers_online(), partition_by: &partition_by/1]
-      ]
+      processors: [default: [concurrency: System.schedulers_online()]]
     )
   end
 
@@ -51,8 +49,6 @@ defmodule OpsWard.Telemetry.IngestionPipeline do
       message
     end)
   end
-
-  defp partition_by(message), do: :erlang.phash2(message.metadata[:key])
 
   defp enrich(payload, metadata) do
     payload

@@ -52,7 +52,18 @@ spec:
         app.kubernetes.io/component: backend
     spec:
       terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
       initContainers:
+        - name: kafka-topics
+          image: {{ .Values.kafka.image | quote }}
+          command: ["/bin/bash", "-ec"]
+          args:
+            - |
+              /opt/kafka/bin/kafka-topics.sh --bootstrap-server {{ include "opsward.fullname" . }}-kafka:9092 --create --if-not-exists --topic opsward.telemetry.v1 --partitions 12 --replication-factor 3
+              /opt/kafka/bin/kafka-topics.sh --bootstrap-server {{ include "opsward.fullname" . }}-kafka:9092 --create --if-not-exists --topic opsward.telemetry.dlq.v1 --partitions 3 --replication-factor 3
+              /opt/kafka/bin/kafka-topics.sh --bootstrap-server {{ include "opsward.fullname" . }}-kafka:9092 --create --if-not-exists --topic opsward.audit.v1 --partitions 6 --replication-factor 3
         - name: migrations
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
           imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
@@ -66,6 +77,11 @@ spec:
         - name: backend
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
           imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            allowPrivilegeEscalation: false
           ports:
             - {name: http, containerPort: {{ .Values.backend.service.httpPort }}}
             - {name: grpc, containerPort: {{ .Values.backend.service.grpcPort }}}
