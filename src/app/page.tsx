@@ -18,9 +18,9 @@ import {
   Users, 
   Crown, 
   Compass, 
-  Zap,
-  Globe,
-  Flame,
+  Zap, 
+  Globe, 
+  Flame, 
   CheckCircle2,
   BookOpenText
 } from 'lucide-react';
@@ -51,16 +51,20 @@ export default function OpsWardDashboard() {
       {/* Top Cyber Tactical HUD */}
       <header className="cozy-topbar sticky top-0 z-30 px-4 py-3 lg:px-8">
         <div className="max-w-[1500px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          {/* Logo & Platform Info */}
-          <div className="flex items-center space-x-3.5 shrink-0">
-            <div className="cozy-logo-mark">
+          {/* Logo & Platform Info (Click to return to Splash Menu) */}
+          <button
+            onClick={() => setShowSplash(true)}
+            className="flex items-center space-x-3.5 shrink-0 text-left cursor-pointer hover:opacity-95 transition-all group"
+            title="Return to Main Splash Menu"
+          >
+            <div className="cozy-logo-mark group-hover:scale-105 transition-transform">
               <div className="w-full h-full flex items-center justify-center">
                 <ShieldAlert className="w-5 h-5 text-[#f6d177]" />
               </div>
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-base font-bold tracking-wider text-white">
+                <h1 className="text-base font-bold tracking-wider text-white group-hover:text-[#fff0c0] transition-colors">
                   OPS<span className="text-[#f3c86f]">WARD</span>
                 </h1>
                 <span className="cozy-version-badge">
@@ -71,7 +75,7 @@ export default function OpsWardDashboard() {
                 Cozy spatial incident response · Oakheart Hall
               </p>
             </div>
-          </div>
+          </button>
 
           {/* Active Navigation Tabs */}
           <div className="cozy-nav shrink-0">
@@ -84,7 +88,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <Compass className="w-3 h-3" />
-              <span>WAR ROOM</span>
+              <span>WAR-ROOM</span>
             </button>
 
             <button
@@ -96,7 +100,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <Layers className="w-3 h-3" />
-              <span>RAFT</span>
+              <span>RAFT CONSENSUS</span>
             </button>
 
             <button
@@ -108,7 +112,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <FileCode className="w-3 h-3" />
-              <span>PLAYBOOKS</span>
+              <span>SAGA PLAYBOOKS</span>
             </button>
 
             <button
@@ -120,7 +124,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <Activity className="w-3 h-3" />
-              <span>TELEMETRY</span>
+              <span>TELEMETRY & DLQ</span>
             </button>
 
             <button
@@ -132,7 +136,7 @@ export default function OpsWardDashboard() {
               }`}
             >
               <BookOpenText className="w-3 h-3" />
-              <span>GUIDEBOOK</span>
+              <span>FIELD MANUAL</span>
             </button>
           </div>
 
