@@ -7,7 +7,6 @@ import { SpatialCommsHub } from '@/components/communication/SpatialCommsHub';
 import { RaftConsensusEngine } from '@/components/raft/RaftConsensusEngine';
 import { PlaybookSagaOrchestrator } from '@/components/playbook/PlaybookSagaOrchestrator';
 import { TelemetryDlqPipeline } from '@/components/telemetry/TelemetryDlqPipeline';
-import { SoundControlWidget } from '@/components/sound/SoundControlWidget';
 import { 
   ShieldAlert, 
   Radio, 
@@ -109,24 +108,20 @@ export default function OpsWardDashboard() {
             </button>
           </div>
 
-          {/* Right Action Bar: Sound Controls & Commander Avatar */}
-          <div className="flex items-center space-x-3">
-            <SoundControlWidget />
-
-            <div className="cozy-commander flex items-center space-x-3">
-              <div className="flex flex-col items-end">
-                <span className="text-xs font-bold text-slate-100 flex items-center space-x-1">
-                  <span>{selectedAvatar.name}</span>
-                  {selectedAvatar.id === 'eric' && <Crown className="w-3 h-3 text-pink-400" />}
-                </span>
-                <span className="text-[10px] text-[#b8dc93]">{selectedAvatar.role}</span>
-              </div>
-              <img
-                src={selectedAvatar.avatar}
-                alt={selectedAvatar.name}
-                className="w-10 h-10 rounded-lg object-cover border border-cyan-400/80 bg-slate-950 pixelated shadow-md shadow-cyan-500/20"
-              />
+          {/* Commander Avatar Badge */}
+          <div className="cozy-commander flex items-center space-x-3 shrink-0">
+            <div className="flex flex-col items-end">
+              <span className="text-xs font-bold text-slate-100 flex items-center space-x-1">
+                <span>{selectedAvatar.name}</span>
+                {selectedAvatar.id === 'eric' && <Crown className="w-3 h-3 text-pink-400" />}
+              </span>
+              <span className="text-[10px] text-[#b8dc93]">{selectedAvatar.role}</span>
             </div>
+            <img
+              src={selectedAvatar.avatar}
+              alt={selectedAvatar.name}
+              className="w-10 h-10 rounded-lg object-cover border border-cyan-400/80 bg-slate-950 pixelated shadow-md shadow-cyan-500/20"
+            />
           </div>
         </div>
       </header>

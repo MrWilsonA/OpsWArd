@@ -9,6 +9,7 @@ import { EXTRA_MAP_COLLIDERS, MAP_BACKGROUNDS, WorldMapId } from '@/lib/world-ma
 import { Clock3, Coffee, Gamepad2, Headphones, Layers, Leaf, MapPin, Radio, Sparkles, Users, Volume2, VolumeX } from 'lucide-react';
 import { ColliderEditorModal } from './ColliderEditorModal';
 import { soundManager } from '@/lib/sound-manager';
+import { SoundControlWidget } from '@/components/sound/SoundControlWidget';
 
 interface TacticalCanvasRoomProps {
   selectedAvatar: CharacterProfile;
@@ -953,8 +954,7 @@ export const TacticalCanvasRoom: React.FC<TacticalCanvasRoomProps> = ({
         <div className="ml-auto flex items-center gap-2">
           <button className="game-icon-button" onClick={() => changeMap(activeMap === 'outdoor' ? 'indoor' : 'outdoor')} title={activeMap === 'outdoor' ? 'Fast travel to Operations Hall' : 'Fast travel to outdoor campus'}><MapPin className="h-4 w-4" /></button>
           <button className={`game-icon-button ${isEditorOpen ? 'is-active' : ''}`} onClick={() => setIsEditorOpen(true)} title="Open Visual Drag & Drop Collider Editor"><Layers className="h-4 w-4" /></button>
-          <button className={`game-icon-button ${showMesh ? 'is-active' : ''}`} onClick={() => setShowMesh((value) => !value)} title="Toggle proximity mesh"><Headphones className="h-4 w-4" /></button>
-          <button className={`game-icon-button ${isMuted ? 'is-danger' : ''}`} onClick={() => setIsMuted((value) => !value)} title="Toggle microphone">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
+          <SoundControlWidget variant="icon" />
         </div>
       </div>
 

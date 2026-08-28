@@ -16,7 +16,11 @@ import {
 } from 'lucide-react';
 import { soundManager, AudioSettings } from '@/lib/sound-manager';
 
-export const SoundControlWidget: React.FC = () => {
+interface SoundControlWidgetProps {
+  variant?: 'icon' | 'pill';
+}
+
+export const SoundControlWidget: React.FC<SoundControlWidgetProps> = ({ variant = 'icon' }) => {
   const [settings, setSettings] = useState<AudioSettings>(soundManager.settings);
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -44,39 +48,60 @@ export const SoundControlWidget: React.FC = () => {
 
   return (
     <div className="relative" ref={panelRef}>
-      {/* Sound Trigger Button in HUD */}
-      <button
-        onClick={() => {
-          soundManager.init();
-          setIsOpen((prev) => !prev);
-        }}
-        className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-sans shadow-sm ${
-          isOpen
-            ? 'bg-amber-500/20 border-amber-500/80 text-amber-200'
-            : isMuted
-            ? 'bg-neutral-900/80 border-neutral-800 text-neutral-400 hover:text-neutral-200'
-            : 'bg-[#1e1512]/90 border-amber-900/50 text-[#f3c86f] hover:border-amber-600/70 hover:bg-[#251b17]'
-        }`}
-        title="Audio & Sound Controls"
-      >
-        {isMuted ? (
-          <VolumeX className="w-3.5 h-3.5 text-rose-400" />
-        ) : settings.isBgmPlaying ? (
-          <div className="flex items-center space-x-1">
-            <Volume2 className="w-3.5 h-3.5 text-amber-400" />
-            <span className="flex space-x-0.5 items-end h-2.5">
-              <span className="w-0.5 h-full bg-amber-400 animate-pulse" />
-              <span className="w-0.5 h-2/3 bg-amber-400 animate-pulse delay-75" />
-              <span className="w-0.5 h-4/5 bg-amber-400 animate-pulse delay-150" />
-            </span>
-          </div>
-        ) : (
-          <Volume1 className="w-3.5 h-3.5 text-amber-400" />
-        )}
-        <span className="font-bold tracking-wider text-[11px] uppercase">
-          {isMuted ? 'Muted' : 'Sound'}
-        </span>
-      </button>
+      {/* Sound Trigger Button */}
+      {variant === 'icon' ? (
+        <button
+          onClick={() => {
+            soundManager.init();
+            setIsOpen((prev) => !prev);
+          }}
+          className={`game-icon-button transition-transform active:scale-95 ${
+            isMuted ? 'is-danger' : isOpen || settings.isBgmPlaying ? 'is-active' : ''
+          }`}
+          title="Audio & Sound Controls"
+        >
+          {isMuted ? (
+            <VolumeX className="h-4 w-4" />
+          ) : settings.isBgmPlaying ? (
+            <Volume2 className="h-4 w-4 animate-pulse" />
+          ) : (
+            <Volume1 className="h-4 w-4" />
+          )}
+        </button>
+      ) : (
+        <button
+          onClick={() => {
+            soundManager.init();
+            setIsOpen((prev) => !prev);
+          }}
+          className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-sans shadow-sm ${
+            isOpen
+              ? 'bg-amber-500/20 border-amber-500/80 text-amber-200'
+              : isMuted
+              ? 'bg-neutral-900/80 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+              : 'bg-[#1e1512]/90 border-amber-900/50 text-[#f3c86f] hover:border-amber-600/70 hover:bg-[#251b17]'
+          }`}
+          title="Audio & Sound Controls"
+        >
+          {isMuted ? (
+            <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+          ) : settings.isBgmPlaying ? (
+            <div className="flex items-center space-x-1">
+              <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+              <span className="flex space-x-0.5 items-end h-2.5">
+                <span className="w-0.5 h-full bg-amber-400 animate-pulse" />
+                <span className="w-0.5 h-2/3 bg-amber-400 animate-pulse delay-75" />
+                <span className="w-0.5 h-4/5 bg-amber-400 animate-pulse delay-150" />
+              </span>
+            </div>
+          ) : (
+            <Volume1 className="w-3.5 h-3.5 text-amber-400" />
+          )}
+          <span className="font-bold tracking-wider text-[11px] uppercase">
+            {isMuted ? 'Muted' : 'Sound'}
+          </span>
+        </button>
+      )}
 
       {/* Floating Sound Settings Popover */}
       {isOpen && (
